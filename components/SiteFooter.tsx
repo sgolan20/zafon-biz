@@ -12,7 +12,7 @@ export function SiteFooter() {
                 <Heart className="h-4 w-4" fill="currentColor" />
               </div>
               <div className="leading-tight">
-                <div className="font-bold">תומכים בעורף</div>
+                <div className="font-bold">תומכים בצפון</div>
                 <div className="text-xs text-muted-foreground">קונים נכון</div>
               </div>
             </div>
@@ -59,7 +59,7 @@ export function SiteFooter() {
 
         <div className="mt-10 pt-6 border-t text-center text-xs text-muted-foreground">
           <p>
-            © {new Date().getFullYear()} תומכים בעורף, קונים נכון. כל הזכויות שמורות.
+            © {new Date().getFullYear()} תומכים בצפון - קונים נכון. כל הזכויות שמורות.
           </p>
           <p className="mt-1">
             פרויקט קהילתי ללא מטרות רווח לתמיכה בעסקי הצפון.

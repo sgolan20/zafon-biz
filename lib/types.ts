@@ -1,5 +1,5 @@
 /**
- * Core types for the תומכים בעורף business directory.
+ * Core types for the תומכים בצפון business directory.
  *
  * These types are shared between client and server (build-time) code.
  * Firestore Timestamp values are normalized to ISO strings before being

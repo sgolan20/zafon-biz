@@ -10,7 +10,7 @@ export function SiteHeader() {
             <Heart className="h-5 w-5" fill="currentColor" />
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-base font-bold text-foreground">תומכים בעורף</span>
+            <span className="text-base font-bold text-foreground">תומכים בצפון</span>
             <span className="text-xs text-muted-foreground">קונים נכון</span>
           </div>
         </Link>

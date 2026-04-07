@@ -7,7 +7,7 @@ import { getCategories, getTowns } from "@/lib/firebase-admin";
 export const metadata: Metadata = {
   title: "הוסיפו את העסק שלכם",
   description:
-    "הוסיפו את העסק שלכם לאינדקס תומכים בעורף. רישום חינם, ללא הרשמה - רק פרטים בסיסיים. אישור תוך 24-48 שעות.",
+    "הוסיפו את העסק שלכם לאינדקס תומכים בצפון. רישום חינם, ללא הרשמה - רק פרטים בסיסיים. אישור תוך 24-48 שעות.",
 };
 
 export default async function RegisterPage() {
@@ -34,7 +34,7 @@ export default async function RegisterPage() {
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight mb-4">
             הוסיפו את העסק שלכם
             <br />
-            <span className="text-primary">לאינדקס תומכים בעורף</span>
+            <span className="text-primary">לאינדקס תומכים בצפון</span>
           </h1>
 
           <p className="text-lg text-muted-foreground leading-relaxed">

@@ -89,7 +89,7 @@ function LoginForm() {
           כניסת מנהל
         </h1>
         <p className="text-sm text-muted-foreground text-center mb-6">
-          תומכים בעורף - פאנל ניהול
+          תומכים בצפון - פאנל ניהול
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

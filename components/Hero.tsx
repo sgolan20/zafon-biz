@@ -15,7 +15,7 @@ export function Hero({ businessCount }: { businessCount: number }) {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-              תומכים בעורף,
+              תומכים בצפון
               <br />
               <span className="text-primary">קונים נכון</span>
             </h1>

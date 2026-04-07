@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${business.name} - ${business.town}`,
     description,
     openGraph: {
-      title: `${business.name} | תומכים בעורף`,
+      title: `${business.name} | תומכים בצפון`,
       description,
       type: "website",
     },
@@ -59,7 +59,7 @@ export default async function BusinessPage({ params }: PageProps) {
     notFound();
   }
 
-  const waMessage = `שלום! ראיתי את ${business.name} באתר "תומכים בעורף, קונים נכון" ואשמח ליצור קשר.`;
+  const waMessage = `שלום! ראיתי את ${business.name} באתר "תומכים בצפון - קונים נכון" ואשמח ליצור קשר.`;
 
   // Schema.org LocalBusiness markup for SEO
   const jsonLd = {

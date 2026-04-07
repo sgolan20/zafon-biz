@@ -33,7 +33,7 @@ export default function ThankYouPage() {
         <Heart className="h-8 w-8 mx-auto mb-3" fill="currentColor" />
         <h2 className="text-xl font-bold mb-2">תודה שאתם איתנו</h2>
         <p className="text-primary-foreground/90">
-          פרויקט "תומכים בעורף, קונים נכון" מתקיים בזכות בעלי עסקים כמוכם, שלא ויתרו על
+          פרויקט "תומכים בצפון - קונים נכון" מתקיים בזכות בעלי עסקים כמוכם, שלא ויתרו על
           הצפון. ביחד נחזק את הכלכלה המקומית.
         </p>
       </div>

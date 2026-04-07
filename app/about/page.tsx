@@ -5,7 +5,7 @@ import { Heart, MapPin, Users, Sparkles, ArrowLeft, GraduationCap, Mail } from "
 export const metadata: Metadata = {
   title: "אודות הפרויקט",
   description:
-    "תומכים בעורף, קונים נכון - פרויקט קהילתי לתמיכה בעסקי קריית שמונה, אצבע הגליל ויישובי קו העימות שנפגעו מהמלחמה.",
+    "תומכים בצפון - קונים נכון. פרויקט קהילתי לתמיכה בעסקי קריית שמונה, אצבע הגליל ויישובי קו העימות שנפגעו מהמלחמה.",
 };
 
 export default function AboutPage() {
@@ -18,7 +18,7 @@ export default function AboutPage() {
         </div>
 
         <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight mb-6">
-          תומכים בעורף,
+          תומכים בצפון
           <br />
           <span className="text-primary">קונים נכון</span>
         </h1>
