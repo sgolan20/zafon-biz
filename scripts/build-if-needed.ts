@@ -89,11 +89,15 @@ async function main() {
   let shouldBuild = !lastBuildAt;
 
   if (lastBuildAt) {
-    // Check for new approvals
+    // Check for new approvals.
+    // We add an explicit orderBy('approvedAt', 'desc') so the query is served
+    // by the existing composite index (status ASC + approvedAt DESC) declared
+    // in firestore.indexes.json. Without it, Firestore demands an ASC index.
     const newApprovals = await db
       .collection("businesses")
       .where("status", "==", "approved")
       .where("approvedAt", ">", lastBuildAt)
+      .orderBy("approvedAt", "desc")
       .limit(1)
       .get();
 

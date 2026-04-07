@@ -1,6 +1,7 @@
 import { getApprovedBusinesses, getCategories, getTowns } from "@/lib/firebase-admin";
 import { shuffleWithSeed, getTodayIsraelSeed } from "@/lib/shuffle";
 import { Hero } from "@/components/Hero";
+import { BusinessTypesShowcase } from "@/components/BusinessTypesShowcase";
 import { BusinessGrid } from "@/components/BusinessGrid";
 
 /**
@@ -28,6 +29,8 @@ export default async function HomePage() {
   return (
     <>
       <Hero businessCount={businesses.length} />
+
+      <BusinessTypesShowcase />
 
       <section id="businesses" className="container-page py-10 sm:py-14 scroll-mt-20">
         <BusinessGrid businesses={shuffled} categories={categories} towns={towns} />
