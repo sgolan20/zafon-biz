@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Heart, MapPin, Users, Sparkles, ArrowLeft } from "lucide-react";
+import { Heart, MapPin, Users, Sparkles, ArrowLeft, GraduationCap, Mail } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "אודות הפרויקט",
@@ -90,6 +90,55 @@ export default function AboutPage() {
           זה לא עסק. אין כאן עמלות, אין פרסומות, אין מודלים סודיים. רק רצון להחזיר עסקים
           שעבדו קשה כל החיים לאן שהם צריכים להיות - בתוך הכלכלה הישראלית, פעילים, מצליחים.
         </p>
+      </section>
+
+      {/* Private AI lessons callout */}
+      <section className="not-prose mb-12 rounded-2xl border-2 border-primary/20 bg-gradient-to-bl from-primary-soft via-white to-accent-soft/40 p-6 sm:p-8">
+        <div className="flex items-start gap-4">
+          <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <GraduationCap className="h-6 w-6" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              רוצים ללמוד AI עם שחר?
+            </h2>
+            <p className="text-foreground/85 leading-relaxed mb-4">
+              שחר הוא מרצה לבינה מלאכותית ומפתח, ומעביר{" "}
+              <strong>שיעורים פרטיים בזום</strong> אחד-על-אחד למי שרוצה ללמוד AI מאפס
+              או להעמיק בנושא ספציפי. שלושת התחומים העיקריים שהוא מלמד:
+            </p>
+            <ul className="space-y-2 mb-5 text-foreground/85">
+              <li className="flex items-start gap-2">
+                <span className="text-primary font-bold">•</span>
+                <span>
+                  <strong>פיתוח אתרים בעזרת AI</strong> — בניית אתרים ואפליקציות מודרניות
+                  עם כלי AI כמו Claude Code, גם למי שלא יודע לתכנת
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary font-bold">•</span>
+                <span>
+                  <strong>יצירת תמונות ב-AI</strong> — שליטה ב-Midjourney,
+                  ChatGPT/DALL-E, Replicate, Nano Banana, gpt-image וכלים נוספים
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary font-bold">•</span>
+                <span>
+                  <strong>יצירת וידאו ב-AI</strong> — Sora, Runway, Kling, Veo וכלים
+                  נוספים ליצירת סרטונים מקצועיים מטקסט או מתמונות
+                </span>
+              </li>
+            </ul>
+            <a
+              href="mailto:sgolan20@gmail.com?subject=שיעור פרטי ב-AI"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
+            >
+              <Mail className="h-4 w-4" />
+              להזמנת שיעור — sgolan20@gmail.com
+            </a>
+          </div>
+        </div>
       </section>
 
       {/* CTA cards */}

@@ -9,28 +9,34 @@ type Scene = {
 
 const SCENES: Scene[] = [
   {
-    src: "/images/scene-carpenter.jpg",
-    alt: "נגר ישראלי עובד בבית מלאכת עץ בצפון",
-    title: "נגרים ובעלי מלאכה",
-    subtitle: "ריהוט בעבודת יד מהגליל",
+    src: "/images/scene-cheese.jpg",
+    alt: "ידיים מבוגרות חותכות גלגל גבינה במרתף יישון בגליל",
+    title: "גבנים ומחלבות",
+    subtitle: "גבינות עיזים וכבשים מהגליל",
   },
   {
-    src: "/images/scene-metalworker.jpg",
-    alt: "מסגר ישראלי רותך מסגרת מתכת בבית מלאכה בצפון",
-    title: "מסגרים ורתכים",
-    subtitle: "מתכת, ברזל ושערים",
-  },
-  {
-    src: "/images/scene-farmer.jpg",
-    alt: "חקלאית צעירה אוחזת בסל זיתים ורימונים בכרם בגליל",
-    title: "חקלאים ויצרני מזון",
-    subtitle: "תוצרת טרייה מהגליל",
+    src: "/images/scene-winemaker.jpg",
+    alt: "ידיים פותחות בקבוק יין אדום במרתף יין גלילי בין חביות עץ",
+    title: "יקבים ויינות",
+    subtitle: "יין מקומי מכרמי הצפון",
   },
   {
     src: "/images/scene-potter.jpg",
     alt: "אמנית קרמיקה ישראלית יוצרת כד ליד אובניים בצפון",
     title: "אמנים ויוצרים",
     subtitle: "קרמיקה, אומנות ועיצוב",
+  },
+  {
+    src: "/images/scene-carpenter.jpg",
+    alt: "נגר ישראלי עובד בבית מלאכת עץ בצפון",
+    title: "נגרים ובעלי מלאכה",
+    subtitle: "ריהוט בעבודת יד מהגליל",
+  },
+  {
+    src: "/images/scene-tailor.jpg",
+    alt: "ידיים זקנות תופרות במכונת תפירה ישנה בחנות חייט בצפון",
+    title: "חייטים ותפירה",
+    subtitle: "תיקונים ועבודות בהזמנה",
   },
 ];
 
@@ -48,7 +54,7 @@ export function BusinessTypesShowcase() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 sm:gap-6">
           {SCENES.map((scene) => (
             <article
               key={scene.src}
@@ -59,16 +65,20 @@ export function BusinessTypesShowcase() {
                   src={scene.src}
                   alt={scene.alt}
                   fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 20vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"
+                  className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent"
                 />
                 <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-                  <h3 className="text-lg font-bold leading-tight">{scene.title}</h3>
-                  <p className="text-sm text-white/85 mt-0.5">{scene.subtitle}</p>
+                  <h3 className="text-base lg:text-[15px] xl:text-base font-bold leading-tight">
+                    {scene.title}
+                  </h3>
+                  <p className="text-xs lg:text-[11px] xl:text-xs text-white/85 mt-0.5 leading-snug">
+                    {scene.subtitle}
+                  </p>
                 </div>
               </div>
             </article>

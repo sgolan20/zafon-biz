@@ -35,6 +35,18 @@ const PHOTO_STYLE =
   "candid documentary feel, soft film grain, authentic, no text, no logos, " +
   "professional photojournalism quality";
 
+// Style for the diverse, no-face "real work" showcase round.
+// Faces are intentionally cropped out — AI struggles with realistic faces and
+// faceless hands+tools+materials look more authentic and more universal.
+const CANDID_STYLE =
+  "Hyper-realistic amateur documentary photograph, iPhone snapshot quality, " +
+  "slightly off-center framing, NO FACES VISIBLE — face is intentionally " +
+  "cropped out of the frame, only hands, arms, torso, tools and materials. " +
+  "Real imperfections: visible wear on tools, work stains, dust, scuffed " +
+  "wood, age spots on hands. Soft film grain, natural ambient light only, " +
+  "no studio lighting, no glamorous styling, no text, no logos, no signage. " +
+  "Avoid the polished editorial look.";
+
 const JOBS: Job[] = [
   {
     filename: "hero-bakery.jpg",
@@ -64,34 +76,6 @@ const JOBS: Job[] = [
       PHOTO_STYLE,
   },
   {
-    filename: "scene-metalworker.jpg",
-    aspect_ratio: "3:2",
-    prompt:
-      "A realistic editorial photograph of an Israeli metalworker and welder, " +
-      "warm Mediterranean appearance, around 45 years old, wearing a heavy leather " +
-      "apron, thick gloves and a welding helmet pushed up onto his forehead, " +
-      "welding a steel gate frame in his metal workshop in northern Israel. Bright " +
-      "orange sparks flying from the welding point, glowing molten metal, dark " +
-      "industrial workshop interior with steel beams and tools racked on the wall. " +
-      "Dramatic warm rim light from the welding arc, motion in the sparks, gritty " +
-      "and authentic. " +
-      PHOTO_STYLE,
-  },
-  {
-    filename: "scene-farmer.jpg",
-    aspect_ratio: "3:2",
-    prompt:
-      "A realistic editorial photograph of a young Israeli woman farmer, warm " +
-      "Mediterranean appearance with long dark hair tied back, around 30 years old, " +
-      "wearing a simple linen shirt and worn work trousers, standing in her family " +
-      "olive grove and pomegranate orchard in the Galilee mountains in northern " +
-      "Israel. She is holding a wicker basket full of freshly picked olives and " +
-      "ripe pomegranates close to her chest, smiling gently at the harvest. " +
-      "Rolling green Galilee hills behind her, warm late afternoon golden hour " +
-      "sunlight, soft breeze, hopeful and grounded mood. " +
-      PHOTO_STYLE,
-  },
-  {
     filename: "scene-potter.jpg",
     aspect_ratio: "3:2",
     prompt:
@@ -103,6 +87,50 @@ const JOBS: Job[] = [
       "and blues displayed on wooden shelves behind her, soft warm window light " +
       "from the side. Calm, focused, creative atmosphere. " +
       PHOTO_STYLE,
+  },
+  {
+    filename: "scene-cheese.jpg",
+    aspect_ratio: "3:2",
+    prompt:
+      "A documentary photograph inside a small artisanal cheese cellar in " +
+      "northern Israel. In the foreground, weathered older hands — sun-spotted, " +
+      "wrinkled, with rough fingernails — are using a thin wire cheese cutter to " +
+      "slice a wedge from a large round wheel of pale aged cheese resting on a " +
+      "worn wooden plank. Only a faded blue work shirt sleeve and a stained " +
+      "canvas apron are visible — the face is cropped out above the top of the " +
+      "frame. Behind the hands, dozens of round cheese wheels rest on rough " +
+      "wooden shelves stacked floor to ceiling, fading into dim warm light from " +
+      "a single hanging bulb. Faint dust particles suspended in the air. " +
+      CANDID_STYLE,
+  },
+  {
+    filename: "scene-winemaker.jpg",
+    aspect_ratio: "3:2",
+    prompt:
+      "A documentary photograph inside a small Galilean winery in northern " +
+      "Israel. The frame is cropped at chest level — no face visible — showing " +
+      "weathered older hands with stained fingernails uncorking an unlabeled " +
+      "bottle of dark red wine over a rough wooden table. The person wears a " +
+      "worn dark green flannel shirt rolled up at the sleeves and a leather " +
+      "apron with grape stains. Behind the hands, large oak wine barrels stacked " +
+      "on wooden racks, soft warm light filtering through a small window, dust " +
+      "drifting in the air. " +
+      CANDID_STYLE,
+  },
+  {
+    filename: "scene-tailor.jpg",
+    aspect_ratio: "3:2",
+    prompt:
+      "A documentary photograph of an old tailor's workshop in northern Israel. " +
+      "Top-down overhead view of an old black Singer sewing machine on a " +
+      "wooden table. Hands of an elderly person guiding a piece of dark navy " +
+      "fabric under the moving needle — only the hands and forearms in worn " +
+      "beige cardigan sleeves are visible, no face in frame. A yellow tape " +
+      "measure draped across the table, brass scissors, white tailor's chalk, " +
+      "spools of thread, scattered fabric scraps. Cool fluorescent ceiling light " +
+      "mixed with a warm desk lamp glow on the work surface, well-used wooden " +
+      "table with marks and ink stains. " +
+      CANDID_STYLE,
   },
 ];
 
