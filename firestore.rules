@@ -1,0 +1,68 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper - check if the requester is a registered admin.
+    // Admins are stored in /admins/{uid}, with uid matching the Firebase Auth UID.
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Validate a public business submission. Public users may only create
+    // documents in 'pending' status, with no admin-only fields like approvedAt.
+    function isValidPendingBusiness() {
+      let d = request.resource.data;
+      return d.status == 'pending'
+        && d.name is string && d.name.size() >= 2 && d.name.size() <= 100
+        && d.description is string && d.description.size() >= 20 && d.description.size() <= 1000
+        && d.contactName is string && d.contactName.size() >= 2 && d.contactName.size() <= 80
+        && d.phone is string && d.phone.size() >= 9 && d.phone.size() <= 20
+        && d.category is string && d.category.size() > 0
+        && d.town is string && d.town.size() > 0
+        && d.slug is string && d.slug.size() > 0
+        && d.shuffleSeed is int
+        && !('approvedAt' in d)
+        && !('approvedBy' in d)
+        && d.createdAt == request.time;
+    }
+
+    // businesses:
+    //   - Public site doesn't read these (it uses the static export built from
+    //     firebase-admin), so read is admin-only.
+    //   - Anonymous create allowed for the registration form, but only with
+    //     status='pending' and required fields.
+    //   - Updates and deletes are admin-only.
+    match /businesses/{businessId} {
+      allow read: if isAdmin();
+      allow create: if isValidPendingBusiness();
+      allow update, delete: if isAdmin();
+    }
+
+    // categories: read-only public (used by the registration form),
+    // writable only by admins.
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // towns: same as categories.
+    match /towns/{townId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // admins: only existing admins can read the admin list. New admins are
+    // added manually via the Firebase Console (no client write path).
+    match /admins/{userId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Default deny for any other collection
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

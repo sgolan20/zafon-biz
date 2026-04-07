@@ -33,6 +33,19 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Local secrets - never commit
+/.secrets/
+*-sa-key.json
+service-account*.json
+
+# Firebase local cache
+/.firebase/
+
+# Local dev artifacts
+/.playwright-mcp/
+*.png
+!public/**/*.png
+
 # vercel
 .vercel
 
