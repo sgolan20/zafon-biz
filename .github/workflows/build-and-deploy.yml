@@ -12,8 +12,8 @@ on:
   # Daily rebuild at midnight Israel time (22:00 UTC) to refresh Daily Shuffle
   schedule:
     - cron: "0 22 * * *"
-    # Also every 15 min as a safety net so newly-approved businesses appear soon
-    - cron: "*/15 * * * *"
+    # Also every 30 min as a safety net so newly-approved businesses appear soon
+    - cron: "*/30 * * * *"
 
 jobs:
   build:
