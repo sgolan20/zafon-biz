@@ -16,6 +16,9 @@
  */
 
 import { spawn } from "child_process";
+import { writeFileSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import {
   initializeApp,
   applicationDefault,
@@ -37,9 +40,30 @@ function initFirebase() {
   }
 }
 
-function run(cmd: string, args: string[]): Promise<void> {
+/**
+ * Materialize the service account JSON to a temp file and return its path.
+ * Used so that subprocesses (Firebase CLI, Next build with admin SDK) can
+ * authenticate via GOOGLE_APPLICATION_CREDENTIALS the way they expect.
+ */
+function ensureCredentialsFile(): string | undefined {
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    return process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  }
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    const path = join(tmpdir(), "zafon-biz-sa.json");
+    writeFileSync(path, process.env.FIREBASE_SERVICE_ACCOUNT, { mode: 0o600 });
+    return path;
+  }
+  return undefined;
+}
+
+function run(cmd: string, args: string[], extraEnv?: Record<string, string>): Promise<void> {
   return new Promise((resolve, reject) => {
-    const proc = spawn(cmd, args, { stdio: "inherit", shell: true });
+    const proc = spawn(cmd, args, {
+      stdio: "inherit",
+      shell: true,
+      env: { ...process.env, ...extraEnv },
+    });
     proc.on("close", (code) => {
       if (code === 0) resolve();
       else reject(new Error(`${cmd} exited with code ${code}`));
@@ -95,11 +119,21 @@ async function main() {
     process.exit(0);
   }
 
+  // Make sure both Next.js (admin SDK at build time) and the Firebase CLI
+  // (deploy step) can authenticate via GOOGLE_APPLICATION_CREDENTIALS.
+  const credentialsPath = ensureCredentialsFile();
+  const childEnv: Record<string, string> = {};
+  if (credentialsPath) childEnv.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath;
+
   console.log("→ Running next build...");
-  await run("npx", ["next", "build"]);
+  await run("npx", ["next", "build"], childEnv);
 
   console.log("→ Deploying to Firebase Hosting...");
-  await run("npx", ["firebase", "deploy", "--only", "hosting", "--project", PROJECT_ID]);
+  await run(
+    "npx",
+    ["firebase", "deploy", "--only", "hosting", "--project", PROJECT_ID, "--non-interactive"],
+    childEnv,
+  );
 
   // Save new lastBuild timestamp
   await metaRef.set({

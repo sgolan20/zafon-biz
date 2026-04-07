@@ -33,6 +33,7 @@
     "@types/seedrandom": "^3.0.8",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
+    "firebase-tools": "^15.13.0",
     "google-auth-library": "^10.6.2",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
