@@ -10,6 +10,36 @@ import { z } from "zod";
 // Israeli phone: starts with 0, 9 or 10 digits total, with optional dashes/spaces.
 const phoneRegex = /^0\d{1,2}[\-\s]?\d{3}[\-\s]?\d{4}$/;
 
+/**
+ * Lenient URL validator: accepts either a full URL ("https://gogo.com")
+ * or just a domain ("gogo.com" / "instagram.com/me"). The submit handler
+ * later prepends "https://" if missing — see normalizeUrl().
+ */
+function isUrlOrDomain(v: string): boolean {
+  if (!v) return true;
+  const candidate = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+  try {
+    const u = new URL(candidate);
+    // Require at least one dot in the hostname so that random words don't
+    // sneak through (e.g. "asdf" → "https://asdf" parses but isn't a host).
+    return u.hostname.includes(".") && u.hostname.length >= 4;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Normalize a user-entered URL or domain to a full URL with protocol.
+ * Used by the submit handler before writing to Firestore so that all
+ * stored links are clickable.
+ */
+export function normalizeUrl(v: string): string {
+  const trimmed = v.trim();
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 export const businessRegistrationSchema = z.object({
   name: z
     .string()
@@ -49,18 +79,18 @@ export const businessRegistrationSchema = z.object({
     .or(z.literal("")),
   website: z
     .string()
-    .url("כתובת אתר לא תקינה (יש לכלול https://)")
+    .refine(isUrlOrDomain, "כתובת אתר לא תקינה")
     .optional()
     .or(z.literal("")),
   openingHours: z.string().max(200).optional().or(z.literal("")),
   facebook: z
     .string()
-    .url("קישור פייסבוק לא תקין")
+    .refine(isUrlOrDomain, "קישור פייסבוק לא תקין")
     .optional()
     .or(z.literal("")),
   instagram: z
     .string()
-    .url("קישור אינסטגרם לא תקין")
+    .refine(isUrlOrDomain, "קישור אינסטגרם לא תקין")
     .optional()
     .or(z.literal("")),
 

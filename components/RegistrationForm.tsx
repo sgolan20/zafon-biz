@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import {
   businessRegistrationSchema,
+  normalizeUrl,
   type BusinessRegistrationInput,
 } from "@/lib/validation";
 import { db } from "@/lib/firebase";
@@ -129,8 +130,8 @@ const STEPS: StepDef[] = [
     key: "website",
     required: false,
     question: "יש לעסק אתר אינטרנט?",
-    hint: "אופציונלי. כולל https://",
-    placeholder: "https://example.com",
+    hint: "אופציונלי. אפשר פשוט הדומיין, למשל gogo.com",
+    placeholder: "gogo.com",
     type: "url",
     inputMode: "url",
     ltr: true,
@@ -155,8 +156,8 @@ const STEPS: StepDef[] = [
     key: "facebook",
     required: false,
     question: "יש לעסק עמוד פייסבוק?",
-    hint: "אופציונלי",
-    placeholder: "https://facebook.com/...",
+    hint: "אופציונלי. הדביקו את הקישור או רק את הכתובת",
+    placeholder: "facebook.com/your-page",
     type: "url",
     inputMode: "url",
     ltr: true,
@@ -165,8 +166,8 @@ const STEPS: StepDef[] = [
     key: "instagram",
     required: false,
     question: "יש לעסק חשבון אינסטגרם?",
-    hint: "אופציונלי",
-    placeholder: "https://instagram.com/...",
+    hint: "אופציונלי. הדביקו את הקישור או רק את הכתובת",
+    placeholder: "instagram.com/your-handle",
     type: "url",
     inputMode: "url",
     ltr: true,
@@ -254,13 +255,27 @@ export function RegistrationForm({ categories, towns }: RegistrationFormProps) {
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && current?.type !== "textarea") {
+    if (e.key !== "Enter") return;
+    // Never auto-submit via Enter on the review step — the user must
+    // explicitly click "שלחו את הבקשה" so they can read everything first.
+    if (isReview) {
+      e.preventDefault();
+      return;
+    }
+    if (current?.type !== "textarea") {
       e.preventDefault();
       next();
     }
   }
 
   async function onSubmit(data: BusinessRegistrationInput) {
+    // Defensive guard: refuse to submit unless we are actually on the
+    // review step. Prevents accidental early submits if the click on
+    // the last "הבא" button somehow re-targets to the (now-rendered)
+    // submit button.
+    if (!isReview) {
+      return;
+    }
     setSubmitError(null);
 
     // Honeypot
@@ -296,11 +311,14 @@ export function RegistrationForm({ categories, towns }: RegistrationFormProps) {
         "facebook",
         "instagram",
       ] as const;
+      const urlFields = new Set(["website", "facebook", "instagram"]);
 
       for (const key of optionalFields) {
         const value = data[key];
         if (typeof value === "string" && value.trim().length > 0) {
-          payload[key] = value.trim();
+          payload[key] = urlFields.has(key)
+            ? normalizeUrl(value)
+            : value.trim();
         }
       }
 
@@ -426,6 +444,7 @@ export function RegistrationForm({ categories, towns }: RegistrationFormProps) {
 
           {isReview ? (
             <button
+              key="submit-btn"
               type="submit"
               disabled={isSubmitting}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed transition shadow-sm"
@@ -444,6 +463,7 @@ export function RegistrationForm({ categories, towns }: RegistrationFormProps) {
             </button>
           ) : (
             <button
+              key="next-btn"
               type="button"
               onClick={next}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-6 py-3 text-base font-bold text-primary-foreground hover:bg-primary/90 transition shadow-sm"
@@ -512,7 +532,10 @@ function StepRenderer({
             register(step.key).ref(el);
             inputRef.current = el;
           }}
-          type={step.type === "text" ? "text" : step.type}
+          // Use type="text" for url fields too — type="url" makes the
+          // browser reject domain-only inputs like "gogo.com" before our
+          // own (lenient) validator gets a chance.
+          type={step.type === "text" || step.type === "url" ? "text" : step.type}
           inputMode={step.inputMode}
           dir={step.ltr ? "ltr" : undefined}
           placeholder={step.placeholder}
@@ -652,10 +675,13 @@ function ReviewStep({
   return (
     <div>
       <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-        כמעט סיימנו! בואו נסקור את הפרטים
+        כמעט סיימנו! בדקו את הפרטים
       </h2>
       <p className="text-sm text-muted-foreground mb-5">
-        לחצו על העיפרון ליד כל פרט כדי לערוך אותו, ואז שלחו את הבקשה.
+        לחצו על אייקון העיפרון ליד כל שדה כדי לערוך, או על "חזור" כדי לעבור
+        אחורה. כשתסיימו - לחצו על <strong>"שלחו את הבקשה"</strong> למטה.
+        <br />
+        <span className="text-xs">עד שתלחצו על הכפתור — הטופס לא נשלח.</span>
       </p>
 
       <ul className="divide-y rounded-xl border bg-muted/30">
