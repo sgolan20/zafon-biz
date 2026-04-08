@@ -75,24 +75,45 @@ async function main() {
   initFirebase();
   const db = getFirestore();
 
-  // Read last build timestamp
+  // Read last build timestamp + last known approved count
   const metaRef = db.collection("meta").doc("lastBuild");
   const metaDoc = await metaRef.get();
   const lastBuildAt = metaDoc.exists
     ? (metaDoc.data()?.timestamp as Timestamp | undefined)
     : undefined;
+  const lastApprovedCount = metaDoc.exists
+    ? ((metaDoc.data()?.approvedCount as number | undefined) ?? null)
+    : null;
 
   console.log(`Last build: ${lastBuildAt?.toDate().toISOString() ?? "never"}`);
+  console.log(`Last approved count: ${lastApprovedCount ?? "unknown"}`);
 
-  // Check if there are any approved businesses changed since last build.
+  // Always query the current count of approved businesses. This is what
+  // catches deletions, unapprovals, and even bulk wipes — situations
+  // where no "new approval" exists but the live site is still stale.
+  const approvedSnap = await db
+    .collection("businesses")
+    .where("status", "==", "approved")
+    .count()
+    .get();
+  const currentApprovedCount = approvedSnap.data().count;
+  console.log(`Current approved count: ${currentApprovedCount}`);
+
   // If never built before -> always build.
   let shouldBuild = !lastBuildAt;
+  let buildReason = shouldBuild ? "first build" : "";
 
-  if (lastBuildAt) {
-    // Check for new approvals.
-    // We add an explicit orderBy('approvedAt', 'desc') so the query is served
-    // by the existing composite index (status ASC + approvedAt DESC) declared
-    // in firestore.indexes.json. Without it, Firestore demands an ASC index.
+  // Approved-count delta catches deletes, unapprovals, AND new approvals.
+  if (lastBuildAt && lastApprovedCount !== currentApprovedCount) {
+    shouldBuild = true;
+    buildReason = `approved count changed: ${lastApprovedCount} → ${currentApprovedCount}`;
+  }
+
+  // Defensive secondary check: a same-count edit (e.g. an admin edits a
+  // business in place without changing approval state) won't move the
+  // count, but the existing approvedAt watermark query still picks up
+  // any re-approval. Kept for that edge case.
+  if (lastBuildAt && !shouldBuild) {
     const newApprovals = await db
       .collection("businesses")
       .where("status", "==", "approved")
@@ -100,14 +121,14 @@ async function main() {
       .orderBy("approvedAt", "desc")
       .limit(1)
       .get();
-
-    // Check for any updates (deletes, edits)
-    // We use approvedAt as a proxy here. For more granular checks, you can
-    // add an `updatedAt` field on writes and query that instead.
     if (!newApprovals.empty) {
       shouldBuild = true;
-      console.log(`Found ${newApprovals.size}+ changes since last build`);
+      buildReason = "new approval since last build";
     }
+  }
+
+  if (shouldBuild && buildReason) {
+    console.log(`→ ${buildReason}`);
   }
 
   // Always rebuild on weekends/midnight to refresh the daily shuffle.
@@ -139,9 +160,11 @@ async function main() {
     childEnv,
   );
 
-  // Save new lastBuild timestamp
+  // Save new lastBuild timestamp + the approved count we just deployed,
+  // so the next run can detect deletes/unapprovals via count delta.
   await metaRef.set({
     timestamp: Timestamp.now(),
+    approvedCount: currentApprovedCount,
     deployedBy: process.env.GITHUB_ACTOR || "local",
   });
 

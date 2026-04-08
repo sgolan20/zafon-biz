@@ -12,8 +12,11 @@ on:
   # Daily rebuild at midnight Israel time (22:00 UTC) to refresh Daily Shuffle
   schedule:
     - cron: "0 22 * * *"
-    # Also every 30 min as a safety net so newly-approved businesses appear soon
-    - cron: "*/30 * * * *"
+    # Twice an hour as a safety net so admin actions reach the live site
+    # quickly. We deliberately avoid :00 and :30 (the busiest minutes on
+    # GitHub Actions free tier — those slots get throttled hard) and pick
+    # off-peak minutes (:07 and :37) which fire much closer to on-time.
+    - cron: "7,37 * * * *"
 
 jobs:
   build:
