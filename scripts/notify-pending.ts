@@ -52,6 +52,14 @@ function hebrewCountLabel(n: number): string {
   return `${n} עסקים חדשים`;
 }
 
+// Verb agreement helpers — Hebrew conjugates by count.
+function hebrewWaiting(n: number): string {
+  return n === 1 ? "ממתין" : "ממתינים";
+}
+function hebrewAdded(n: number): string {
+  return n === 1 ? "נוסף" : "נוספו";
+}
+
 async function main() {
   const token = process.env.GITHUB_TOKEN;
   const repo = process.env.GITHUB_REPOSITORY;
@@ -118,10 +126,13 @@ async function main() {
     };
   });
 
-  const title = `🔔 ${hebrewCountLabel(items.length)} ממתינים לאישור`;
+  const n = items.length;
+  const title = `🔔 ${hebrewCountLabel(n)} ${hebrewWaiting(n)} לאישור`;
 
   const lines: string[] = [];
-  lines.push(`נוספו ${hebrewCountLabel(items.length)} לאתר **תומכים בצפון - קונים נכון** וממתינים לאישור ידני.`);
+  lines.push(
+    `${hebrewAdded(n)} ${hebrewCountLabel(n)} לאתר **תומכים בצפון - קונים נכון** ו${hebrewWaiting(n)} לאישור ידני.`,
+  );
   lines.push("");
   lines.push("| שם העסק | יישוב | קטגוריה |");
   lines.push("| --- | --- | --- |");
