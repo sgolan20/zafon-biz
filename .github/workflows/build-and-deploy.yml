@@ -41,3 +41,13 @@ jobs:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           FORCE_BUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force == 'true' && '1' || (github.event.schedule == '0 22 * * *' && '1' || '0') }}
           GITHUB_ACTOR: ${{ github.actor }}
+
+      # Runs after the build step so a deploy failure still lets us notify
+      # about new submissions. The script exits quietly if RESEND_API_KEY
+      # is not configured, so this is a safe no-op until the secret is set.
+      - name: Notify admin about new pending businesses
+        if: always()
+        run: npx tsx scripts/notify-pending.ts
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
