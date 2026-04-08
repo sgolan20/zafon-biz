@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
-import { Heart, MapPin, Users, Sparkles, ArrowLeft, GraduationCap, Mail } from "lucide-react";
+import { Heart, MapPin, Users, Sparkles, ArrowLeft, Mail } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "אודות הפרויקט",
@@ -82,7 +83,7 @@ export default function AboutPage() {
         <h2 className="text-2xl font-bold mt-10">מי עומד מאחורי הפרויקט?</h2>
         <p className="leading-relaxed text-foreground/90">
           הפרויקט הוקם על-ידי <strong>שחר גולן</strong>, בעל עסק בקריית שמונה שנפגע בעצמו
-          מהמלחמה. שחר הוא מפתח ומרצה לבינה מלאכותית, והאתר הזה הוא היוזמה שלו לתת לכל
+          מהמלחמה. שחר הוא מרצה לבינה מלאכותית, והאתר הזה הוא היוזמה שלו לתת לכל
           העסקים באזור הצפון פלטפורמה אחת חזקה - כי בלי קצת תמיכה מהארץ, הצפון ייקח עוד
           הרבה זמן להתאושש.
         </p>
@@ -94,18 +95,25 @@ export default function AboutPage() {
 
       {/* Private AI lessons callout */}
       <section className="not-prose mb-12 rounded-2xl border-2 border-primary/20 bg-gradient-to-bl from-primary-soft via-white to-accent-soft/40 p-6 sm:p-8">
-        <div className="flex items-start gap-4">
-          <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <GraduationCap className="h-6 w-6" />
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6">
+          <div className="relative h-28 w-28 sm:h-32 sm:w-32 shrink-0 rounded-full overflow-hidden ring-4 ring-white shadow-lg">
+            <Image
+              src="/images/shahar-golan.jpg"
+              alt="שחר גולן - מרצה לבינה מלאכותית"
+              fill
+              sizes="(max-width: 640px) 112px, 128px"
+              className="object-cover"
+            />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 text-center sm:text-right">
             <h2 className="text-2xl font-bold text-foreground mb-2">
               רוצים ללמוד AI עם שחר?
             </h2>
             <p className="text-foreground/85 leading-relaxed mb-4">
-              שחר הוא מרצה לבינה מלאכותית ומפתח, ומעביר{" "}
-              <strong>שיעורים פרטיים בזום</strong> אחד-על-אחד למי שרוצה ללמוד AI מאפס
-              או להעמיק בנושא ספציפי. שלושת התחומים העיקריים שהוא מלמד:
+              שחר הוא <strong>מרצה לבינה מלאכותית</strong>, ומעביר הרצאות וסדנאות
+              בינה מלאכותית לקבוצות ולמקומות עבודה שרוצים לקחת את ה-AI צעד אחד
+              קדימה — וגם <strong>שיעורים פרטיים בזום</strong> אחד-על-אחד למי
+              שרוצה ללמוד AI מאפס או להעמיק בנושא ספציפי. שלושת התחומים העיקריים:
             </p>
             <ul className="space-y-2 mb-5 text-foreground/85">
               <li className="flex items-start gap-2">
@@ -119,23 +127,26 @@ export default function AboutPage() {
                 <span className="text-primary font-bold">•</span>
                 <span>
                   <strong>יצירת תמונות ב-AI</strong> — שליטה ב-Midjourney,
-                  ChatGPT/DALL-E, Replicate, Nano Banana, gpt-image וכלים נוספים
+                  Replicate, Nano Banana, gpt-image וכלים נוספים
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary font-bold">•</span>
                 <span>
-                  <strong>יצירת וידאו ב-AI</strong> — Sora, Runway, Kling, Veo וכלים
+                  <strong>יצירת וידאו ב-AI</strong> — Runway, Kling, Veo וכלים
                   נוספים ליצירת סרטונים מקצועיים מטקסט או מתמונות
                 </span>
               </li>
             </ul>
+            <p className="text-sm text-foreground/75 leading-relaxed mb-5 italic">
+              אגב — גם האתר הזה נבנה כולו בעזרת בינה מלאכותית, ללא שום ידע בקוד.
+            </p>
             <a
-              href="mailto:sgolan20@gmail.com?subject=שיעור פרטי ב-AI"
+              href="mailto:sgolan20@gmail.com?subject=הרצאה / סדנה / שיעור פרטי ב-AI"
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
             >
               <Mail className="h-4 w-4" />
-              להזמנת שיעור — sgolan20@gmail.com
+              להזמנת הרצאה / סדנה / שיעור — sgolan20@gmail.com
             </a>
           </div>
         </div>
