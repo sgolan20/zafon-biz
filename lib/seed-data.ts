@@ -30,7 +30,7 @@ export const SEED_CATEGORIES: Omit<Category, "id">[] = [
   { name: "אירועים וצילום", icon: "camera", order: 17 },
   { name: "מתנות ומזכרות", icon: "gift", order: 18 },
   { name: "מוצרי תינוקות וילדים", icon: "baby", order: 19 },
-  { name: "שירותים מקצועיים אחרים", icon: "more-horizontal", order: 20 },
+  { name: "אחר", icon: "more-horizontal", order: 20 },
 ];
 
 export const SEED_TOWNS: Omit<Town, "id">[] = [
