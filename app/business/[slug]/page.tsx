@@ -22,6 +22,15 @@ interface PageProps {
 
 export async function generateStaticParams() {
   const businesses = await getApprovedBusinesses();
+  // Next.js with `output: 'export'` requires every dynamic route to
+  // generate at least one static path, otherwise the empty array is
+  // treated as a missing generateStaticParams call and the build fails.
+  // When there are zero approved businesses (e.g. right after launch or
+  // after an admin clears the directory), emit a single placeholder slug
+  // — the page handler hits notFound() for it since no business matches.
+  if (businesses.length === 0) {
+    return [{ slug: "_placeholder" }];
+  }
   return businesses.map((b) => ({ slug: b.slug }));
 }
 
