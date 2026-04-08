@@ -35,6 +35,11 @@ import { getFirestore, Timestamp } from "firebase-admin/firestore";
 
 const PROJECT_ID = "zafon-biz";
 const ADMIN_URL = "https://zafon-biz.web.app/admin/";
+// Assigning the issue to Shahar (and @-mentioning him) is what actually
+// triggers the notification email. GitHub suppresses "you opened this
+// issue" emails when github-actions[bot] runs from a workflow you
+// dispatched, so without an assignee/mention the inbox stays empty.
+const ASSIGNEE = "sgolan20";
 
 function initFirebase() {
   if (getApps().length > 0) return;
@@ -130,6 +135,8 @@ async function main() {
   const title = `🔔 ${hebrewCountLabel(n)} ${hebrewWaiting(n)} לאישור`;
 
   const lines: string[] = [];
+  lines.push(`@${ASSIGNEE}`);
+  lines.push("");
   lines.push(
     `${hebrewAdded(n)} ${hebrewCountLabel(n)} לאתר **תומכים בצפון - קונים נכון** ו${hebrewWaiting(n)} לאישור ידני.`,
   );
@@ -166,6 +173,7 @@ async function main() {
       title,
       body,
       labels: ["pending-businesses"],
+      assignees: [ASSIGNEE],
     }),
   });
 
