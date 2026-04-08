@@ -30,10 +30,11 @@ import {
   Globe,
   Clock,
   AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import type { Business } from "@/lib/types";
-import { formatPhone } from "@/lib/utils";
+import { formatPhone, telLink } from "@/lib/utils";
 
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -328,13 +329,59 @@ function BusinessReviewCard({
         </Detail>
         <Detail icon={<UserIcon className="h-4 w-4" />}>{business.contactName}</Detail>
         <Detail icon={<Phone className="h-4 w-4" />}>
-          <span dir="ltr">{formatPhone(business.phone)}</span>
+          <a
+            href={telLink(business.phone)}
+            className="text-primary hover:underline"
+            dir="ltr"
+          >
+            {formatPhone(business.phone)}
+          </a>
         </Detail>
         {business.email && (
-          <Detail icon={<Mail className="h-4 w-4" />}>{business.email}</Detail>
+          <Detail icon={<Mail className="h-4 w-4" />}>
+            <a
+              href={`mailto:${business.email}`}
+              className="text-primary hover:underline break-all"
+            >
+              {business.email}
+            </a>
+          </Detail>
         )}
         {business.website && (
-          <Detail icon={<Globe className="h-4 w-4" />}>{business.website}</Detail>
+          <Detail icon={<Globe className="h-4 w-4" />}>
+            <a
+              href={business.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline break-all"
+            >
+              {business.website.replace(/^https?:\/\//, "")}
+            </a>
+          </Detail>
+        )}
+        {business.facebook && (
+          <Detail icon={<ExternalLink className="h-4 w-4" />}>
+            <a
+              href={business.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline break-all"
+            >
+              פייסבוק
+            </a>
+          </Detail>
+        )}
+        {business.instagram && (
+          <Detail icon={<ExternalLink className="h-4 w-4" />}>
+            <a
+              href={business.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline break-all"
+            >
+              אינסטגרם
+            </a>
+          </Detail>
         )}
         {business.openingHours && (
           <Detail icon={<Clock className="h-4 w-4" />}>{business.openingHours}</Detail>
