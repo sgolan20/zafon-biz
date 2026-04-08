@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, MapPin, Users, Sparkles, ArrowLeft, Mail } from "lucide-react";
+import { Heart, MapPin, Users, Sparkles, ArrowLeft, Mail, Camera } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "אודות הפרויקט",
@@ -38,9 +38,11 @@ export default function AboutPage() {
           העסקים פונו, איבדו לקוחות, ואחרים ראו את הכנסותיהם נחתכות.
         </p>
         <p className="leading-relaxed text-foreground/90">
-          בעלי העסקים האלה לא צריכים צדקה. הם צריכים <strong>לקוחות</strong>. הם בעלי
-          מקצוע מצוינים, יש להם מוצרים נהדרים, והם רוצים לעבוד. כל הזמנה - של חבילת קפה,
-          של מטבח, של אירוח, של עיצוב גרפי - היא תמיכה אמיתית בכלכלה של האזור.
+          בעלי העסקים האלה <strong>לא רוצים צדקה</strong>. הם רוצים{" "}
+          <strong>לקוחות</strong>. הם בעלי מקצוע מצוינים, יש להם מוצרים נהדרים, והם רוצים
+          לעבוד ולהתפרנס בכבוד. כל הזמנה - של חבילת קפה, של מטבח, של אירוח, של עיצוב גרפי
+          - היא תמיכה אמיתית, ישירה, בכלכלה של האזור. בלי מתווכים, בלי קרנות, בלי
+          ועדות - הכסף הולך ישר למי שעובד.
         </p>
 
         <h2 className="text-2xl font-bold mt-10">איך זה עובד?</h2>
@@ -82,15 +84,67 @@ export default function AboutPage() {
 
         <h2 className="text-2xl font-bold mt-10">מי עומד מאחורי הפרויקט?</h2>
         <p className="leading-relaxed text-foreground/90">
-          הפרויקט הוקם על-ידי <strong>שחר גולן</strong>, בעל עסק בקריית שמונה שנפגע בעצמו
-          מהמלחמה. שחר הוא מרצה לבינה מלאכותית, והאתר הזה הוא היוזמה שלו לתת לכל
-          העסקים באזור הצפון פלטפורמה אחת חזקה - כי בלי קצת תמיכה מהארץ, הצפון ייקח עוד
-          הרבה זמן להתאושש.
+          הפרויקט הוקם על-ידי <strong>שחר גולן</strong>, תושב קריית שמונה ובעל עסק שנפגע
+          בעצמו מהמלחמה. האתר הזה הוא היוזמה שלו לתת לכל העסקים באזור הצפון פלטפורמה אחת
+          חזקה - כי בלי קצת תמיכה מהארץ, הצפון ייקח עוד הרבה זמן להתאושש.
         </p>
         <p className="leading-relaxed text-foreground/90">
           זה לא עסק. אין כאן עמלות, אין פרסומות, אין מודלים סודיים. רק רצון להחזיר עסקים
           שעבדו קשה כל החיים לאן שהם צריכים להיות - בתוך הכלכלה הישראלית, פעילים, מצליחים.
         </p>
+      </section>
+
+      {/* Personal story — Shahar's photo booth business */}
+      <section className="not-prose mb-12 rounded-2xl border-2 border-accent/30 bg-gradient-to-bl from-accent-soft via-white to-primary-soft/30 p-6 sm:p-8">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-bold mb-4">
+          <Camera className="h-3.5 w-3.5" />
+          <span>הסיפור שלי</span>
+        </div>
+
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 leading-tight">
+          עמדת צילום AI לאירועים — מקריית שמונה
+        </h2>
+
+        <div className="space-y-4 text-foreground/90 leading-relaxed">
+          <p>
+            חוץ מההרצאות והסדנאות ב-AI, יש לי <strong>עסק של עמדות צילום AI לאירועים</strong>.
+            אנחנו מגיעים עם צוות לאירוע, מקימים עמדת צילום מיוחדת — וכל מי שמצטלם בוחר
+            דמות והופך, בתוך כמה שניות, ל<strong>גיבור על, איש חלל, מכשף, נסיכה</strong> או
+            כל דמות אחרת שהוא רוצה. את התוצאה אפשר לקחת הביתה בו במקום כ
+            <strong>מגנט מודפס</strong> או על <strong>בלוק עץ ממותג</strong> — מתנה אישית
+            שאף אחד אחר באירוע לא יקבל דומה לה. בר-מצוות, חתונות, ימי גיבוש לחברות, מסיבות
+            יום הולדת — כל אירוע שאתם רוצים שהאורחים יזכרו.
+          </p>
+
+          <p className="bg-white/60 border-r-4 border-accent rounded-lg p-4 text-foreground">
+            ב-1 במרץ, <strong>כל האירועים שלי למרץ ולפורים בוטלו</strong>. אני כבר חודש
+            וקצת ללא הכנסה מהעסק.
+          </p>
+
+          <p className="text-lg font-medium">
+            אני מספר את זה כי בדיוק בגלל זה הקמתי את האתר הזה. אנחנו, בעלי העסקים בצפון —
+          </p>
+
+          <p className="text-xl sm:text-2xl font-bold text-foreground leading-snug">
+            לא בוכים. לא מבקשים תרומות. לא רוצים צדקה.
+            <br />
+            <span className="text-accent">אנחנו רוצים פרנסה.</span>
+          </p>
+
+          <p>
+            רוצים שיזמינו מאיתנו את העבודה שאנחנו טובים בה, כדי שנוכל להתפרנס בכבוד
+            ולהמשיך לתת את השירות הטוב ביותר ללקוחות שלנו. אם יש לכם אירוע — שלי או של
+            כל עסק אחר באתר הזה — זה הרגע להזמין מהצפון.
+          </p>
+        </div>
+
+        <a
+          href="mailto:sgolan20@gmail.com?subject=הזמנת עמדת צילום AI לאירוע"
+          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm sm:text-base font-bold text-accent-foreground shadow-sm hover:bg-accent/90 transition-colors"
+        >
+          <Mail className="h-4 w-4" />
+          להזמנת עמדת צילום AI לאירוע — sgolan20@gmail.com
+        </a>
       </section>
 
       {/* Private AI lessons callout */}
