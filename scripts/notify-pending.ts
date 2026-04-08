@@ -1,24 +1,28 @@
 /**
- * Notifies the admin (Shahar) by email when new pending businesses have
- * been submitted since the last notification check.
+ * Notifies the admin (Shahar) about new pending businesses by opening a
+ * GitHub Issue in the repo. GitHub automatically emails the repo owner
+ * when a new issue is created, so this gives us "email notifications"
+ * with zero third-party services and zero extra secrets — GITHUB_TOKEN
+ * is provided automatically inside Actions.
  *
  * Designed to run alongside scripts/build-if-needed.ts in the same
- * GitHub Actions cron job (every 30 min). Idempotent — sends at most
- * one email per cron run, and only when at least one new pending
- * business appeared since the last successful email.
+ * GitHub Actions cron job (every 30 min). Idempotent — opens at most
+ * one issue per cron run, and only when at least one new pending
+ * business appeared since the last successful notification.
  *
  * State: stored in Firestore at meta/lastNotified as a Timestamp.
  *
+ * Privacy: the zafon-biz repo is public, so the issue body contains
+ * ONLY business name + town + category. Phone, email, contact name,
+ * and full description stay in Firestore / the admin panel.
+ *
  * Environment:
- *   RESEND_API_KEY        — Resend API key (if missing, script exits
- *                           quietly so it never breaks the deploy job)
+ *   GITHUB_TOKEN          — auto-provided by Actions. If missing, the
+ *                           script exits quietly (safe no-op for local
+ *                           runs and for the build job before the
+ *                           permission is granted).
+ *   GITHUB_REPOSITORY     — auto-provided by Actions as "owner/repo".
  *   FIREBASE_SERVICE_ACCOUNT — service account JSON for admin SDK
- *   NOTIFICATION_EMAIL    — optional override; defaults to
- *                           sgolan20@gmail.com
- *   RESEND_FROM           — optional override; defaults to Resend's
- *                           sandbox sender "onboarding@resend.dev"
- *                           which works out of the box for the account
- *                           email (no domain verification needed).
  */
 
 import {
@@ -31,9 +35,6 @@ import { getFirestore, Timestamp } from "firebase-admin/firestore";
 
 const PROJECT_ID = "zafon-biz";
 const ADMIN_URL = "https://zafon-biz.web.app/admin/";
-const NOTIFICATION_EMAIL =
-  process.env.NOTIFICATION_EMAIL || "sgolan20@gmail.com";
-const RESEND_FROM = process.env.RESEND_FROM || "onboarding@resend.dev";
 
 function initFirebase() {
   if (getApps().length > 0) return;
@@ -45,14 +46,6 @@ function initFirebase() {
   }
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 function hebrewCountLabel(n: number): string {
   if (n === 1) return "עסק חדש אחד";
   if (n === 2) return "שני עסקים חדשים";
@@ -60,10 +53,11 @@ function hebrewCountLabel(n: number): string {
 }
 
 async function main() {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
+  const token = process.env.GITHUB_TOKEN;
+  const repo = process.env.GITHUB_REPOSITORY;
+  if (!token || !repo) {
     console.log(
-      "⚠ RESEND_API_KEY not set — skipping notification check (safe no-op)",
+      "⚠ GITHUB_TOKEN / GITHUB_REPOSITORY not set — skipping notification check (safe no-op outside Actions)",
     );
     return;
   }
@@ -84,7 +78,7 @@ async function main() {
 
   // 2. First-run initialization: if there's no record of a previous
   //    notification, just set the watermark to "now" and exit. We don't
-  //    want to blast an email with every historical pending business
+  //    want to open an issue with every historical pending business
   //    the first time this runs in CI.
   if (!lastNotifiedAt) {
     await metaRef.set({
@@ -92,7 +86,7 @@ async function main() {
       lastCount: 0,
       initialized: true,
     });
-    console.log("✓ First run: watermark initialized, no email sent");
+    console.log("✓ First run: watermark initialized, no issue opened");
     return;
   }
 
@@ -113,109 +107,70 @@ async function main() {
 
   console.log(`Found ${snap.size} new pending businesses`);
 
-  // 4. Build the email body
-  type Biz = {
-    name: string;
-    category: string;
-    town: string;
-    contactName: string;
-    phone: string;
-    description: string;
-    email?: string;
-    website?: string;
-  };
+  // 4. Build the issue body — ONLY name + town + category (repo is public).
+  type Biz = { name: string; category: string; town: string };
   const items: Biz[] = snap.docs.map((d) => {
     const data = d.data();
     return {
       name: (data.name as string) ?? "",
       category: (data.category as string) ?? "",
       town: (data.town as string) ?? "",
-      contactName: (data.contactName as string) ?? "",
-      phone: (data.phone as string) ?? "",
-      description: (data.description as string) ?? "",
-      email: data.email as string | undefined,
-      website: data.website as string | undefined,
     };
   });
 
-  const subject = `${hebrewCountLabel(items.length)} ממתינים לאישור - תומכים בצפון`;
+  const title = `🔔 ${hebrewCountLabel(items.length)} ממתינים לאישור`;
 
-  const cardsHtml = items
-    .map(
-      (b) => `
-      <div style="background:#f5f5f4;border-radius:12px;padding:16px;margin-bottom:12px;">
-        <h3 style="margin:0 0 8px;color:#1c1917;font-size:18px;">${escapeHtml(b.name)}</h3>
-        <p style="margin:4px 0;color:#57534e;font-size:14px;line-height:1.6;">
-          <strong>קטגוריה:</strong> ${escapeHtml(b.category)}<br>
-          <strong>יישוב:</strong> ${escapeHtml(b.town)}<br>
-          <strong>איש קשר:</strong> ${escapeHtml(b.contactName)} — ${escapeHtml(b.phone)}${b.email ? " — " + escapeHtml(b.email) : ""}
-        </p>
-        <p style="margin:8px 0 0;color:#44403c;font-size:13px;line-height:1.6;">
-          ${escapeHtml(b.description).slice(0, 400)}${b.description.length > 400 ? "..." : ""}
-        </p>
-      </div>`,
-    )
-    .join("");
-
-  const html = `
-<div dir="rtl" style="font-family:-apple-system,system-ui,Arial,sans-serif;max-width:600px;margin:0 auto;padding:16px;">
-  <h2 style="color:#0369a1;margin:0 0 12px;">נוספו ${hebrewCountLabel(items.length)} לאישור</h2>
-  <p style="color:#57534e;margin:0 0 20px;">יש עסקים חדשים בתור האישור באתר "תומכים בצפון - קונים נכון":</p>
-  ${cardsHtml}
-  <p style="margin:28px 0 12px;text-align:center;">
-    <a href="${ADMIN_URL}" style="display:inline-block;background:#0369a1;color:#ffffff;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:16px;">
-      לפאנל הניהול ← ${ADMIN_URL}
-    </a>
-  </p>
-  <p style="color:#a8a29e;font-size:11px;text-align:center;margin-top:24px;">
-    התראה אוטומטית מ-GitHub Actions. ${new Date().toLocaleString("he-IL", { timeZone: "Asia/Jerusalem" })}
-  </p>
-</div>`;
-
-  // Plaintext fallback for email clients that prefer it
-  const textLines: string[] = [];
-  textLines.push(`נוספו ${hebrewCountLabel(items.length)} לאישור באתר תומכים בצפון.`);
-  textLines.push("");
+  const lines: string[] = [];
+  lines.push(`נוספו ${hebrewCountLabel(items.length)} לאתר **תומכים בצפון - קונים נכון** וממתינים לאישור ידני.`);
+  lines.push("");
+  lines.push("| שם העסק | יישוב | קטגוריה |");
+  lines.push("| --- | --- | --- |");
   for (const b of items) {
-    textLines.push(`• ${b.name}`);
-    textLines.push(`  קטגוריה: ${b.category}`);
-    textLines.push(`  יישוב: ${b.town}`);
-    textLines.push(`  איש קשר: ${b.contactName} — ${b.phone}`);
-    textLines.push(`  תיאור: ${b.description.slice(0, 400)}${b.description.length > 400 ? "..." : ""}`);
-    textLines.push("");
+    lines.push(`| ${b.name} | ${b.town} | ${b.category} |`);
   }
-  textLines.push(`לאישור: ${ADMIN_URL}`);
-  const text = textLines.join("\n");
+  lines.push("");
+  lines.push(`### 🔗 [לפאנל הניהול לאישור העסקים](${ADMIN_URL})`);
+  lines.push("");
+  lines.push("---");
+  lines.push("");
+  lines.push(
+    "_פרטי הקשר המלאים (טלפון, אימייל, תיאור) זמינים רק בפאנל הניהול — הריפו הזה ציבורי._",
+  );
+  lines.push(
+    `_התראה אוטומטית מ-GitHub Actions · ${new Date().toLocaleString("he-IL", { timeZone: "Asia/Jerusalem" })}_`,
+  );
+  const body = lines.join("\n");
 
-  // 5. Send via Resend
-  console.log(`Sending email to ${NOTIFICATION_EMAIL} via Resend...`);
-  const res = await fetch("https://api.resend.com/emails", {
+  // 5. Open the GitHub issue
+  console.log(`Opening GitHub issue on ${repo}...`);
+  const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: RESEND_FROM,
-      to: [NOTIFICATION_EMAIL],
-      subject,
-      html,
-      text,
+      title,
+      body,
+      labels: ["pending-businesses"],
     }),
   });
 
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Resend API error ${res.status}: ${body}`);
+    const errBody = await res.text();
+    throw new Error(`GitHub API error ${res.status}: ${errBody}`);
   }
 
-  const data = (await res.json()) as { id?: string };
-  console.log(`✓ Email sent (Resend ID: ${data.id ?? "unknown"})`);
+  const data = (await res.json()) as { number?: number; html_url?: string };
+  console.log(`✓ Issue opened: #${data.number} ${data.html_url}`);
 
   // 6. Update lastNotified watermark
   await metaRef.set({
     timestamp: Timestamp.now(),
     lastCount: items.length,
+    lastIssueNumber: data.number ?? null,
   });
   console.log("✓ lastNotified watermark updated");
 }
