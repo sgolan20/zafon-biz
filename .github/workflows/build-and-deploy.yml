@@ -1,6 +1,11 @@
 name: Build and Deploy
 
 on:
+  # Push to main always triggers a forced rebuild — code changes wouldn't be
+  # caught by the Firestore-delta skip check in build-if-needed.ts.
+  push:
+    branches: [main]
+
   # Manual trigger from GitHub UI or API (workflow_dispatch from admin panel later)
   workflow_dispatch:
     inputs:
@@ -17,6 +22,11 @@ on:
     # GitHub Actions free tier — those slots get throttled hard) and pick
     # off-peak minutes (:07 and :37) which fire much closer to on-time.
     - cron: "7,37 * * * *"
+
+# Prevent overlapping deploys when multiple pushes land in quick succession.
+concurrency:
+  group: build-and-deploy
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -43,7 +53,7 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          FORCE_BUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force == 'true' && '1' || (github.event.schedule == '0 22 * * *' && '1' || '0') }}
+          FORCE_BUILD: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.force == 'true') || github.event.schedule == '0 22 * * *') && '1' || '0' }}
           GITHUB_ACTOR: ${{ github.actor }}
 
       # Runs after the build step so a deploy failure still lets us notify
