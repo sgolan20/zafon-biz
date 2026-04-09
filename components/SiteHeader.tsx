@@ -24,7 +24,7 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/about/"
-            className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors hidden sm:inline-block"
+            className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             אודות
           </Link>
