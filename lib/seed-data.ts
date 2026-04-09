@@ -110,6 +110,7 @@ export const SEED_TOWNS: Omit<Town, "id">[] = [
   { name: "טפחות", region: "גליל עליון", isBorderCommunity: false },
   { name: "צבעון", region: "גליל עליון", isBorderCommunity: false },
   { name: "גרנות הגליל", region: "גליל עליון", isBorderCommunity: false },
+  { name: "הר חלוץ", region: "גליל עליון", isBorderCommunity: false },
 
   // ===== מערב הגליל =====
   { name: "שלומי", region: "מערב הגליל", isBorderCommunity: true },
@@ -181,6 +182,7 @@ export const SEED_TOWNS: Omit<Town, "id">[] = [
   { name: "נוב", region: "רמת הגולן", isBorderCommunity: false },
   { name: "נאות גולן", region: "רמת הגולן", isBorderCommunity: false },
   { name: "רמות", region: "רמת הגולן", isBorderCommunity: false },
+  { name: "קצרין", region: "רמת הגולן", isBorderCommunity: false },
 ];
 
 /**
