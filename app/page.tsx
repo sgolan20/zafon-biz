@@ -8,6 +8,7 @@ import { shuffleWithSeed, getTodayIsraelSeed } from "@/lib/shuffle";
 import { Hero } from "@/components/Hero";
 import { BusinessTypesShowcase } from "@/components/BusinessTypesShowcase";
 import { BusinessGrid } from "@/components/BusinessGrid";
+import { SupportBanner } from "@/components/SupportBanner";
 
 /**
  * Public home page - statically generated.
@@ -44,6 +45,8 @@ export default async function HomePage() {
       <Hero businessCount={businesses.length} />
 
       <BusinessTypesShowcase />
+
+      <SupportBanner />
 
       <section id="businesses" className="container-page py-10 sm:py-14 scroll-mt-20">
         <BusinessGrid
