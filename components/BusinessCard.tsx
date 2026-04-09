@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { MapPin, Phone, ArrowLeft } from "lucide-react";
-import type { Business } from "@/lib/types";
+import type { BusinessSummary } from "@/lib/types";
 import { formatPhone } from "@/lib/utils";
 
 interface BusinessCardProps {
-  business: Business;
+  business: BusinessSummary;
 }
 
 export function BusinessCard({ business }: BusinessCardProps) {

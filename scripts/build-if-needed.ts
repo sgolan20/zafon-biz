@@ -150,8 +150,11 @@ async function main() {
   const childEnv: Record<string, string> = {};
   if (credentialsPath) childEnv.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath;
 
-  console.log("→ Running next build...");
-  await run("npx", ["next", "build"], childEnv);
+  console.log("→ Running next build (with prebuild dump)...");
+  // Use `npm run build` so the `prebuild` script (scripts/dump-businesses.ts)
+  // fires automatically — it writes public/businesses.json which the home
+  // page lazy-loads after hydration.
+  await run("npm", ["run", "build"], childEnv);
 
   console.log("→ Deploying to Firebase Hosting...");
   await run(

@@ -1,4 +1,9 @@
-import { getApprovedBusinesses, getCategories, getTowns } from "@/lib/firebase-admin";
+import {
+  getApprovedBusinesses,
+  getCategories,
+  getTowns,
+  toBusinessSummary,
+} from "@/lib/firebase-admin";
 import { shuffleWithSeed, getTodayIsraelSeed } from "@/lib/shuffle";
 import { Hero } from "@/components/Hero";
 import { BusinessTypesShowcase } from "@/components/BusinessTypesShowcase";
@@ -7,15 +12,22 @@ import { BusinessGrid } from "@/components/BusinessGrid";
 /**
  * Public home page - statically generated.
  *
- * The list of businesses is fetched from Firestore at build time and the
- * order is shuffled deterministically using today's Israel-local date as a
- * seed. This means:
- *   - Every visitor today sees the same order (good for trust + caching)
- *   - The order rotates daily so no business is permanently at the top
- *   - SEO crawlers see all businesses inline in the HTML
+ * To keep the home page HTML small as the catalog grows past a few hundred
+ * businesses, we only inline the first INITIAL_COUNT entries here. The
+ * BusinessGrid client component lazy-loads the full catalog from
+ * `/businesses.json` (written by scripts/dump-businesses.ts during the
+ * prebuild step) on hydration. The inline batch is enough for:
+ *   - First contentful paint with no fetch wait
+ *   - Above-the-fold cards on a large desktop
+ *   - SEO crawlers that don't run JS still see real business content
  *
- * Daily rebuild via GitHub Actions cron is what rotates the order each day.
+ * The order is shuffled deterministically with today's Israel-local date,
+ * so the daily rebuild rotates the catalog and no single business sits at
+ * the top permanently. The inline batch and the JSON share the same shuffled
+ * order so search results are consistent.
  */
+const INITIAL_COUNT = 30;
+
 export default async function HomePage() {
   const [businesses, categories, towns] = await Promise.all([
     getApprovedBusinesses(),
@@ -25,6 +37,7 @@ export default async function HomePage() {
 
   const seed = getTodayIsraelSeed();
   const shuffled = shuffleWithSeed(businesses, seed);
+  const initialBusinesses = shuffled.slice(0, INITIAL_COUNT).map(toBusinessSummary);
 
   return (
     <>
@@ -33,7 +46,12 @@ export default async function HomePage() {
       <BusinessTypesShowcase />
 
       <section id="businesses" className="container-page py-10 sm:py-14 scroll-mt-20">
-        <BusinessGrid businesses={shuffled} categories={categories} towns={towns} />
+        <BusinessGrid
+          initialBusinesses={initialBusinesses}
+          totalCount={businesses.length}
+          categories={categories}
+          towns={towns}
+        />
       </section>
     </>
   );

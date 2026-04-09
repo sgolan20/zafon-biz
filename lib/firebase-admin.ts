@@ -12,7 +12,7 @@
 
 import { cert, getApps, initializeApp, applicationDefault, type App } from "firebase-admin/app";
 import { getFirestore, Timestamp, type Firestore } from "firebase-admin/firestore";
-import type { Business, Category, Town } from "./types";
+import type { Business, BusinessSummary, Category, Town } from "./types";
 
 const PROJECT_ID = "zafon-biz";
 
@@ -58,75 +58,112 @@ function toIsoString(value: unknown): string | undefined {
 }
 
 /**
- * Fetch all approved businesses from Firestore at build time.
- * Uses select() to limit egress to the fields the public site actually needs.
+ * Module-level Promise caches.
+ *
+ * `next build` is a single Node process. When the same query is needed by
+ * many static pages (every business [slug] page reads the full list inside
+ * generateMetadata + the page handler), we want exactly ONE Firestore round
+ * trip per build, not one per page render.
+ *
+ * Caching the in-flight Promise (not the resolved value) makes this safe
+ * even if multiple callers race the first call: they all await the same
+ * pending fetch.
+ *
+ * In `next dev` the module is reloaded on file changes, so the cache
+ * naturally invalidates between hot reloads. In production builds the
+ * process exits when the build is done, so there's no leak.
  */
-export async function getApprovedBusinesses(): Promise<Business[]> {
-  const snapshot = await adminDb
-    .collection("businesses")
-    .where("status", "==", "approved")
-    .get();
+let _businessesCache: Promise<Business[]> | null = null;
+let _categoriesCache: Promise<Category[]> | null = null;
+let _townsCache: Promise<Town[]> | null = null;
 
-  return snapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
+/**
+ * Fetch all approved businesses from Firestore at build time.
+ * Memoized at the module level — see comment above.
+ */
+export function getApprovedBusinesses(): Promise<Business[]> {
+  if (_businessesCache) return _businessesCache;
+  _businessesCache = (async () => {
+    const snapshot = await adminDb
+      .collection("businesses")
+      .where("status", "==", "approved")
+      .get();
+
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        status: "approved" as const,
+        name: data.name,
+        slug: data.slug,
+        description: data.description,
+        shortDescription: data.shortDescription,
+        category: data.category,
+        subCategory: data.subCategory,
+        tags: data.tags,
+        town: data.town,
+        region: data.region,
+        address: data.address,
+        contactName: data.contactName,
+        phone: data.phone,
+        whatsapp: data.whatsapp,
+        email: data.email,
+        website: data.website,
+        openingHours: data.openingHours,
+        facebook: data.facebook,
+        instagram: data.instagram,
+        createdAt: toIsoString(data.createdAt) ?? new Date().toISOString(),
+        approvedAt: toIsoString(data.approvedAt),
+        approvedBy: data.approvedBy,
+        shuffleSeed: data.shuffleSeed ?? 0,
+      };
+    });
+  })();
+  return _businessesCache;
+}
+
+export function getCategories(): Promise<Category[]> {
+  if (_categoriesCache) return _categoriesCache;
+  _categoriesCache = (async () => {
+    const snapshot = await adminDb.collection("categories").orderBy("order").get();
+    return snapshot.docs.map((doc) => ({
       id: doc.id,
-      status: "approved" as const,
-      name: data.name,
-      slug: data.slug,
-      description: data.description,
-      shortDescription: data.shortDescription,
-      category: data.category,
-      subCategory: data.subCategory,
-      tags: data.tags,
-      town: data.town,
-      region: data.region,
-      address: data.address,
-      contactName: data.contactName,
-      phone: data.phone,
-      whatsapp: data.whatsapp,
-      email: data.email,
-      website: data.website,
-      openingHours: data.openingHours,
-      facebook: data.facebook,
-      instagram: data.instagram,
-      createdAt: toIsoString(data.createdAt) ?? new Date().toISOString(),
-      approvedAt: toIsoString(data.approvedAt),
-      approvedBy: data.approvedBy,
-      shuffleSeed: data.shuffleSeed ?? 0,
-    };
-  });
+      name: doc.data().name,
+      icon: doc.data().icon,
+      order: doc.data().order,
+    }));
+  })();
+  return _categoriesCache;
 }
 
-export async function getBusinessBySlug(slug: string): Promise<Business | null> {
-  const snapshot = await adminDb
-    .collection("businesses")
-    .where("status", "==", "approved")
-    .where("slug", "==", slug)
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) return null;
-  const all = await getApprovedBusinesses();
-  return all.find((b) => b.slug === slug) ?? null;
+/**
+ * Convert a full Business to the slim shape used by the public listing
+ * page and the search index.
+ */
+export function toBusinessSummary(b: Business): BusinessSummary {
+  return {
+    id: b.id,
+    slug: b.slug,
+    name: b.name,
+    category: b.category,
+    shortDescription: b.shortDescription,
+    description: b.description,
+    town: b.town,
+    phone: b.phone,
+    tags: b.tags,
+  };
 }
 
-export async function getCategories(): Promise<Category[]> {
-  const snapshot = await adminDb.collection("categories").orderBy("order").get();
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    name: doc.data().name,
-    icon: doc.data().icon,
-    order: doc.data().order,
-  }));
-}
-
-export async function getTowns(): Promise<Town[]> {
-  const snapshot = await adminDb.collection("towns").orderBy("name").get();
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    name: doc.data().name,
-    region: doc.data().region,
-    isBorderCommunity: doc.data().isBorderCommunity ?? false,
-  }));
+export function getTowns(): Promise<Town[]> {
+  if (_townsCache) return _townsCache;
+  _townsCache = (async () => {
+    const snapshot = await adminDb.collection("towns").orderBy("name").get();
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      name: doc.data().name,
+      region: doc.data().region,
+      isBorderCommunity: doc.data().isBorderCommunity ?? false,
+    }));
+  })();
+  return _townsCache;
 }

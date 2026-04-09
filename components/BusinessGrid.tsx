@@ -1,36 +1,79 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Fuse from "fuse.js";
-import { Search, X, Filter } from "lucide-react";
-import type { Business, Category, Town } from "@/lib/types";
+import { Search, X, Filter, Loader2 } from "lucide-react";
+import type { BusinessSummary, Category, Town } from "@/lib/types";
 import { BusinessCard } from "./BusinessCard";
 
 interface BusinessGridProps {
-  businesses: Business[];
+  /** First N businesses inlined in the home page HTML for fast first paint + SEO. */
+  initialBusinesses: BusinessSummary[];
+  /** Total number of approved businesses (used for the count label and pagination cap). */
+  totalCount: number;
   categories: Category[];
   towns: Town[];
 }
 
-export function BusinessGrid({ businesses, categories, towns }: BusinessGridProps) {
+/** How many extra businesses to reveal each time the sentinel scrolls into view. */
+const PAGE_STEP = 30;
+
+export function BusinessGrid({
+  initialBusinesses,
+  totalCount,
+  categories,
+  towns,
+}: BusinessGridProps) {
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedTown, setSelectedTown] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Build fuse index once per business list change.
+  // Full catalog, lazy-loaded from /businesses.json after hydration. Until
+  // it arrives we render with the initial 30 the server inlined — so the
+  // page is interactive immediately and search starts working in the
+  // background once the JSON lands.
+  const [allBusinesses, setAllBusinesses] = useState<BusinessSummary[]>(initialBusinesses);
+  const [fullLoaded, setFullLoaded] = useState(initialBusinesses.length >= totalCount);
+  const [visibleCount, setVisibleCount] = useState(initialBusinesses.length);
+
+  // Fetch the full catalog once on mount. Skip if the initial set already
+  // contained everything (small directories).
+  useEffect(() => {
+    if (fullLoaded) return;
+    let cancelled = false;
+    fetch("/businesses.json")
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<BusinessSummary[]>;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setAllBusinesses(data);
+        setFullLoaded(true);
+      })
+      .catch((err) => {
+        // Non-fatal — search just stays scoped to the initial inline set.
+        console.warn("Failed to load /businesses.json:", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fullLoaded]);
+
+  // Build the Fuse index against whatever data is currently loaded.
   const fuse = useMemo(
     () =>
-      new Fuse(businesses, {
+      new Fuse(allBusinesses, {
         keys: ["name", "description", "shortDescription", "category", "town", "tags"],
         threshold: 0.35,
         ignoreLocation: true,
       }),
-    [businesses],
+    [allBusinesses],
   );
 
   const filtered = useMemo(() => {
-    let result = businesses;
+    let result = allBusinesses;
 
     if (query.trim()) {
       result = fuse.search(query).map((r) => r.item);
@@ -45,15 +88,40 @@ export function BusinessGrid({ businesses, categories, towns }: BusinessGridProp
     }
 
     return result;
-  }, [businesses, fuse, query, selectedCategory, selectedTown]);
+  }, [allBusinesses, fuse, query, selectedCategory, selectedTown]);
 
   const hasFilters = Boolean(query || selectedCategory || selectedTown);
+
+  // Infinite scroll — when the sentinel hits the viewport, reveal another
+  // PAGE_STEP cards. Disabled while a filter is active (filtered results
+  // are shown in full).
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (hasFilters) return;
+    if (visibleCount >= allBusinesses.length) return;
+    const node = sentinelRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((c) => Math.min(c + PAGE_STEP, allBusinesses.length));
+        }
+      },
+      { rootMargin: "400px 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasFilters, visibleCount, allBusinesses.length]);
 
   function clearFilters() {
     setQuery("");
     setSelectedCategory("");
     setSelectedTown("");
   }
+
+  const visible = hasFilters ? filtered : filtered.slice(0, visibleCount);
+  const totalForLabel = fullLoaded ? allBusinesses.length : totalCount;
 
   return (
     <div>
@@ -126,14 +194,14 @@ export function BusinessGrid({ businesses, categories, towns }: BusinessGridProp
       {/* Results count */}
       <div className="flex items-baseline justify-between mb-4">
         <p className="text-sm text-muted-foreground">
-          {filtered.length === businesses.length
-            ? `${businesses.length} עסקים מהצפון`
-            : `נמצאו ${filtered.length} מתוך ${businesses.length} עסקים`}
+          {hasFilters
+            ? `נמצאו ${filtered.length} מתוך ${totalForLabel} עסקים`
+            : `${totalForLabel} עסקים מהצפון`}
         </p>
       </div>
 
       {/* Grid */}
-      {filtered.length === 0 ? (
+      {visible.length === 0 ? (
         <div className="rounded-xl border border-dashed bg-card p-12 text-center">
           <p className="text-lg font-medium text-foreground mb-2">לא נמצאו עסקים</p>
           <p className="text-sm text-muted-foreground mb-4">
@@ -149,11 +217,23 @@ export function BusinessGrid({ businesses, categories, towns }: BusinessGridProp
           )}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((business) => (
-            <BusinessCard key={business.id} business={business} />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {visible.map((business) => (
+              <BusinessCard key={business.id} business={business} />
+            ))}
+          </div>
+
+          {/* Infinite-scroll sentinel — only when not filtering and more to load */}
+          {!hasFilters && visibleCount < allBusinesses.length && (
+            <div
+              ref={sentinelRef}
+              className="flex items-center justify-center py-10 text-muted-foreground"
+            >
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          )}
+        </>
       )}
     </div>
   );
