@@ -109,6 +109,7 @@ export const SEED_TOWNS: Omit<Town, "id">[] = [
   { name: "שפר", region: "גליל עליון", isBorderCommunity: false },
   { name: "טפחות", region: "גליל עליון", isBorderCommunity: false },
   { name: "צבעון", region: "גליל עליון", isBorderCommunity: false },
+  { name: "גרנות הגליל", region: "גליל עליון", isBorderCommunity: false },
 
   // ===== מערב הגליל =====
   { name: "שלומי", region: "מערב הגליל", isBorderCommunity: true },
