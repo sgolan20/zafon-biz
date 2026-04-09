@@ -57,7 +57,7 @@ export function Hero({ businessCount }: { businessCount: number }) {
           <div className="relative">
             <div className="relative aspect-[3/2] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-black/5">
               <Image
-                src="/images/hero-bakery.jpg"
+                src="/images/hero-bakery.webp"
                 alt="זוג בעלי מאפיה משפחתית בצפון מקשטים עוגות יחד"
                 fill
                 priority

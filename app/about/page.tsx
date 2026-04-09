@@ -152,7 +152,7 @@ export default function AboutPage() {
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6">
           <div className="relative h-28 w-28 sm:h-32 sm:w-32 shrink-0 rounded-full overflow-hidden ring-4 ring-white shadow-lg">
             <Image
-              src="/images/shahar-golan.jpg"
+              src="/images/shahar-golan.webp"
               alt="שחר גולן - מרצה לבינה מלאכותית"
               fill
               sizes="(max-width: 640px) 112px, 128px"

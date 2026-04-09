@@ -9,31 +9,31 @@ type Scene = {
 
 const SCENES: Scene[] = [
   {
-    src: "/images/scene-cheese.jpg",
+    src: "/images/scene-cheese.webp",
     alt: "ידיים מבוגרות חותכות גלגל גבינה במרתף יישון בגליל",
     title: "גבנים ומחלבות",
     subtitle: "גבינות עיזים וכבשים מהגליל",
   },
   {
-    src: "/images/scene-winemaker.jpg",
+    src: "/images/scene-winemaker.webp",
     alt: "ידיים פותחות בקבוק יין אדום במרתף יין גלילי בין חביות עץ",
     title: "יקבים ויינות",
     subtitle: "יין מקומי מכרמי הצפון",
   },
   {
-    src: "/images/scene-potter.jpg",
+    src: "/images/scene-potter.webp",
     alt: "אמנית קרמיקה ישראלית יוצרת כד ליד אובניים בצפון",
     title: "אמנים ויוצרים",
     subtitle: "קרמיקה, אומנות ועיצוב",
   },
   {
-    src: "/images/scene-carpenter.jpg",
+    src: "/images/scene-carpenter.webp",
     alt: "נגר ישראלי עובד בבית מלאכת עץ בצפון",
     title: "נגרים ובעלי מלאכה",
     subtitle: "ריהוט בעבודת יד מהגליל",
   },
   {
-    src: "/images/scene-tailor.jpg",
+    src: "/images/scene-tailor.webp",
     alt: "ידיים זקנות תופרות במכונת תפירה ישנה בחנות חייט בצפון",
     title: "חייטים ותפירה",
     subtitle: "תיקונים ועבודות בהזמנה",

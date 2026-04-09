@@ -7,9 +7,10 @@
  * Saves output to public/images/.
  */
 
-import { writeFileSync, existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -28,6 +29,10 @@ type Job = {
   filename: string;
   prompt: string;
   aspect_ratio: "1:1" | "3:2" | "2:3";
+  // Resize target for the optimized .webp output. Replicate gives us
+  // 1536×1024 originals; we never display them at full resolution, so
+  // we shrink + convert to WebP before saving to public/images/.
+  resize: { w: number; h: number; q: number };
 };
 
 const PHOTO_STYLE =
@@ -49,8 +54,9 @@ const CANDID_STYLE =
 
 const JOBS: Job[] = [
   {
-    filename: "hero-bakery.jpg",
+    filename: "hero-bakery.webp",
     aspect_ratio: "3:2",
+    resize: { w: 1200, h: 800, q: 82 },
     prompt:
       "A realistic editorial photograph of an Israeli man and woman, warm " +
       "Mediterranean appearance with dark hair, around 35 years old, wearing simple " +
@@ -63,8 +69,9 @@ const JOBS: Job[] = [
       PHOTO_STYLE,
   },
   {
-    filename: "scene-carpenter.jpg",
+    filename: "scene-carpenter.webp",
     aspect_ratio: "3:2",
+    resize: { w: 600, h: 400, q: 78 },
     prompt:
       "A realistic editorial photograph of an Israeli carpenter, warm Mediterranean " +
       "appearance with short dark hair and a short beard, around 40 years old, " +
@@ -76,8 +83,9 @@ const JOBS: Job[] = [
       PHOTO_STYLE,
   },
   {
-    filename: "scene-potter.jpg",
+    filename: "scene-potter.webp",
     aspect_ratio: "3:2",
+    resize: { w: 600, h: 400, q: 78 },
     prompt:
       "A realistic editorial photograph of an Israeli woman ceramic artist, warm " +
       "Mediterranean appearance with dark curly hair tied back, around 35 years " +
@@ -89,8 +97,9 @@ const JOBS: Job[] = [
       PHOTO_STYLE,
   },
   {
-    filename: "scene-cheese.jpg",
+    filename: "scene-cheese.webp",
     aspect_ratio: "3:2",
+    resize: { w: 600, h: 400, q: 78 },
     prompt:
       "A documentary photograph inside a small artisanal cheese cellar in " +
       "northern Israel. In the foreground, weathered older hands — sun-spotted, " +
@@ -104,8 +113,9 @@ const JOBS: Job[] = [
       CANDID_STYLE,
   },
   {
-    filename: "scene-winemaker.jpg",
+    filename: "scene-winemaker.webp",
     aspect_ratio: "3:2",
+    resize: { w: 600, h: 400, q: 78 },
     prompt:
       "A documentary photograph inside a small Galilean winery in northern " +
       "Israel. The frame is cropped at chest level — no face visible — showing " +
@@ -118,8 +128,9 @@ const JOBS: Job[] = [
       CANDID_STYLE,
   },
   {
-    filename: "scene-tailor.jpg",
+    filename: "scene-tailor.webp",
     aspect_ratio: "3:2",
+    resize: { w: 600, h: 400, q: 78 },
     prompt:
       "A documentary photograph of an old tailor's workshop in northern Israel. " +
       "Top-down overhead view of an old black Singer sewing machine on a " +
@@ -225,13 +236,26 @@ async function runPrediction(job: Job): Promise<string> {
   throw new Error("unreachable");
 }
 
-async function downloadImage(url: string, filename: string) {
+async function downloadImage(url: string, job: Job) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Download failed ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
-  const path = join(OUT_DIR, filename);
-  writeFileSync(path, buf);
-  console.log(`   ✓ saved ${filename} (${(buf.length / 1024).toFixed(0)} KB)`);
+  const path = join(OUT_DIR, job.filename);
+
+  // Resize the AI output (Replicate gives us ~1536×1024) down to the
+  // dimensions we actually display, then encode as WebP. The site never
+  // shows these at full resolution — converting at generation time saves
+  // ~85% bandwidth on every visitor for the lifetime of the image.
+  await sharp(buf)
+    .resize(job.resize.w, job.resize.h, { fit: "cover", position: "attention" })
+    .webp({ quality: job.resize.q, effort: 6 })
+    .toFile(path);
+
+  const fs = await import("node:fs");
+  const finalSize = fs.statSync(path).size;
+  console.log(
+    `   ✓ saved ${job.filename} (${(buf.length / 1024).toFixed(0)} KB → ${(finalSize / 1024).toFixed(0)} KB webp)`,
+  );
 }
 
 async function main() {
@@ -245,7 +269,7 @@ async function main() {
     }
     try {
       const url = await runPrediction(job);
-      await downloadImage(url, job.filename);
+      await downloadImage(url, job);
     } catch (e) {
       console.error(`   ✗ ${job.filename}:`, (e as Error).message);
     }
