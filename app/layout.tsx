@@ -4,6 +4,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { CtaTracker } from "@/components/CtaTracker";
 
 const rubik = Rubik({
   variable: "--font-rubik",
@@ -63,6 +64,7 @@ export default function RootLayout({
       {process.env.NODE_ENV === "production" && (
         <GoogleAnalytics gaId="G-8VFREBTSH6" />
       )}
+      <CtaTracker />
     </html>
   );
 }
