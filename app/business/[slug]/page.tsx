@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { getApprovedBusinesses } from "@/lib/firebase-admin";
 import { formatPhone, telLink, whatsappLink } from "@/lib/utils";
+import { FavoriteButton } from "@/components/FavoriteButton";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -149,6 +150,7 @@ export default async function BusinessPage({ params }: PageProps) {
                 שלחו הודעה בוואטסאפ
               </a>
             )}
+            <FavoriteButton businessId={business.id} businessName={business.name} />
           </div>
         </div>
 

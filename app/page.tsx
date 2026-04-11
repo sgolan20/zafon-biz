@@ -40,6 +40,15 @@ export default async function HomePage() {
   const shuffled = shuffleWithSeed(businesses, seed);
   const initialBusinesses = shuffled.slice(0, INITIAL_COUNT).map(toBusinessSummary);
 
+  // Per-category counts, computed server-side once so the "search by
+  // category" modal can show them the moment the home page loads (the
+  // full catalog lazy-loads for search/filtering, but counts are tiny and
+  // fit comfortably in the initial HTML payload).
+  const categoryCounts: Record<string, number> = {};
+  for (const b of businesses) {
+    categoryCounts[b.category] = (categoryCounts[b.category] ?? 0) + 1;
+  }
+
   return (
     <>
       <Hero businessCount={businesses.length} />
@@ -53,6 +62,7 @@ export default async function HomePage() {
           initialBusinesses={initialBusinesses}
           totalCount={businesses.length}
           categories={categories}
+          categoryCounts={categoryCounts}
           towns={towns}
         />
       </section>
