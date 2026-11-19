@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "zafon-biz",
+  "account_id": "d9749a22ca7fd24bea5979ce6137365b",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "zafon-biz" }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "zafon-biz",
+      "database_id": "07e92dbb-688a-4ec3-8afd-0663b21994c2",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    // Public base URL, used in password-reset links and the sitemap.
+    "SITE_URL": "https://zafon-biz.sgolan20.workers.dev",
+    // Address used as "from" in password-reset emails. Empty = email disabled
+    // (the admin panel can still copy a reset link to send by WhatsApp).
+    "EMAIL_FROM": "",
+    // Gets an email for every new registration (once email is connected).
+    "ADMIN_EMAIL": "sgolan20@gmail.com"
+  },
+  "observability": { "enabled": true }
+}

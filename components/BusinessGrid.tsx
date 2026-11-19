@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import Fuse from "fuse.js";
 import { Search, X, Filter, Loader2, LayoutGrid, Star } from "lucide-react";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
@@ -74,6 +75,22 @@ export function BusinessGrid({
       cancelled = true;
     };
   }, [fullLoaded]);
+
+  // Pre-fill filters from the URL — the hero search form and the category
+  // tiles link here as /?q=…&town=…&cat=…#businesses.
+  // Re-runs when the URL changes client-side (e.g. clicking a category tile
+  // while already on the home page).
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const q = searchParams.get("q");
+    const town = searchParams.get("town");
+    const cat = searchParams.get("cat");
+    /* eslint-disable react-hooks/set-state-in-effect -- syncing filters from the URL */
+    if (q) setQuery(q);
+    if (town) setSelectedTown(town);
+    if (cat) setSelectedCategory(cat);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [searchParams]);
 
   // Build the Fuse index against whatever data is currently loaded.
   const fuse = useMemo(
@@ -182,38 +199,64 @@ export function BusinessGrid({
 
   return (
     <div>
-      {/* Prominent "search by category" CTA + favorites shortcut */}
-      <div className="mb-5 flex flex-col sm:flex-row gap-3 sm:items-stretch">
+      {/* Section heading */}
+      <div className="flex flex-wrap items-end justify-between gap-5 mb-7">
+        <div className="flex flex-col gap-2.5">
+          <span className="eyebrow">האינדקס</span>
+          <h2 className="text-3xl sm:text-[44px] leading-[1.1] font-extrabold tracking-tight">
+            כל העסקים
+          </h2>
+        </div>
+        <p className="text-[15px] text-muted-foreground max-w-[420px]">
+          הסדר מתחלף כל לילה בחצות, כדי שכל עסק יקבל את ההזדמנות שלו להופיע ראשון.
+        </p>
+      </div>
+
+      {/* Category pills + all-categories modal + favorites */}
+      <div className="mb-2 flex flex-wrap gap-2">
+        <Pill active={!selectedCategory} onClick={() => setSelectedCategory("")}>
+          הכל
+        </Pill>
+        {[...categoriesWithBusinesses]
+          .sort((a, b) => (categoryCounts[b.name] ?? 0) - (categoryCounts[a.name] ?? 0))
+          .filter((c) => c.name !== "אחר")
+          .slice(0, 6)
+          .map((c) => (
+            <Pill
+              key={c.id}
+              active={selectedCategory === c.name}
+              onClick={() => setSelectedCategory(selectedCategory === c.name ? "" : c.name)}
+            >
+              {c.name}
+            </Pill>
+          ))}
         <button
           type="button"
           onClick={() => setCategoryModalOpen(true)}
-          className="group inline-flex items-center justify-center gap-3 rounded-xl bg-primary px-6 py-4 text-base sm:text-lg font-bold text-primary-foreground shadow-md hover:bg-primary/90 transition flex-1 sm:flex-initial"
+          className="inline-flex items-center gap-2 min-h-11 rounded-full border border-dashed border-input bg-transparent px-4 text-[15px] font-semibold text-primary hover:bg-white transition"
         >
-          <LayoutGrid className="h-5 w-5 sm:h-6 sm:w-6" />
-          <span>חפשו לפי קטגוריה</span>
+          <LayoutGrid className="h-4 w-4" />
+          כל התחומים
         </button>
-
         {favoritesHydrated && favoritesCount > 0 && (
           <button
             type="button"
             onClick={() => setFavoritesOnly((v) => !v)}
             aria-pressed={favoritesOnly}
-            className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-4 text-base font-bold transition border-2 ${
+            className={`inline-flex items-center gap-2 min-h-11 rounded-full px-4 text-[15px] font-bold transition border ${
               favoritesOnly
-                ? "bg-amber-400 text-white border-amber-400 hover:bg-amber-500 shadow-md"
-                : "bg-white text-amber-600 border-amber-300 hover:bg-amber-50"
+                ? "bg-accent text-accent-foreground border-accent"
+                : "bg-white text-foreground border-input hover:border-accent"
             }`}
           >
-            <Star className="h-5 w-5" fill="currentColor" />
-            <span>
-              {favoritesOnly ? "מציג מועדפים" : "המועדפים שלי"} ({favoritesCount})
-            </span>
+            <Star className="h-4 w-4" fill="currentColor" />
+            {favoritesOnly ? "מציג מועדפים" : "המועדפים שלי"} ({favoritesCount})
           </button>
         )}
       </div>
 
       {/* Search bar */}
-      <div className="sticky top-16 z-30 -mx-4 sm:mx-0 mb-6 bg-background/95 backdrop-blur px-4 sm:px-0 py-4 border-b sm:border-0">
+      <div className="sticky top-0 z-30 -mx-4 sm:mx-0 mb-6 bg-background/95 backdrop-blur px-4 sm:px-0 py-4 border-b sm:border-0">
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
@@ -222,7 +265,7 @@ export function BusinessGrid({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="חפשו לפי שם עסק, תיאור, או תחום..."
-              className="w-full h-12 pr-11 pl-4 rounded-lg border border-input bg-white text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+              className="w-full h-12 pr-11 pl-4 rounded-xl border border-input bg-white text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
             />
           </div>
           <button
@@ -242,7 +285,7 @@ export function BusinessGrid({
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="h-11 px-3 rounded-lg border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+            className="h-11 px-3 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
           >
             <option value="">כל הקטגוריות</option>
             {categoriesWithBusinesses.map((cat) => (
@@ -255,7 +298,7 @@ export function BusinessGrid({
           <select
             value={selectedTown}
             onChange={(e) => setSelectedTown(e.target.value)}
-            className="h-11 px-3 rounded-lg border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+            className="h-11 px-3 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
           >
             <option value="">כל היישובים</option>
             {towns.map((town) => (
@@ -322,7 +365,7 @@ export function BusinessGrid({
         </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((business) => (
               <BusinessCard
                 key={business.id}
@@ -420,5 +463,30 @@ export function BusinessGrid({
         </div>
       )}
     </div>
+  );
+}
+
+function Pill({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`min-h-11 rounded-full px-4 text-[15px] transition border ${
+        active
+          ? "bg-primary text-primary-foreground border-primary font-bold"
+          : "bg-white text-foreground border-input font-medium hover:border-primary"
+      }`}
+    >
+      {children}
+    </button>
   );
 }

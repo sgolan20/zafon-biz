@@ -1,31 +1,20 @@
-import {
-  getApprovedBusinesses,
-  getCategories,
-  getTowns,
-  toBusinessSummary,
-} from "@/lib/firebase-admin";
+import { getApprovedBusinesses, getCategories, getTowns, toBusinessSummary } from "@/lib/db";
 import { shuffleWithSeed, getTodayIsraelSeed } from "@/lib/shuffle";
-import { Hero } from "@/components/Hero";
+import { Hero, HeroStats } from "@/components/Hero";
 import { BusinessTypesShowcase } from "@/components/BusinessTypesShowcase";
 import { BusinessGrid } from "@/components/BusinessGrid";
 import { SupportBanner } from "@/components/SupportBanner";
+import { JoinSection } from "@/components/JoinSection";
+
+export const dynamic = "force-dynamic";
 
 /**
- * Public home page - statically generated.
+ * Public home page - rendered on each request from D1.
  *
- * To keep the home page HTML small as the catalog grows past a few hundred
- * businesses, we only inline the first INITIAL_COUNT entries here. The
- * BusinessGrid client component lazy-loads the full catalog from
- * `/businesses.json` (written by scripts/dump-businesses.ts during the
- * prebuild step) on hydration. The inline batch is enough for:
- *   - First contentful paint with no fetch wait
- *   - Above-the-fold cards on a large desktop
- *   - SEO crawlers that don't run JS still see real business content
- *
- * The order is shuffled deterministically with today's Israel-local date,
- * so the daily rebuild rotates the catalog and no single business sits at
- * the top permanently. The inline batch and the JSON share the same shuffled
- * order so search results are consistent.
+ * Only the first INITIAL_COUNT businesses are inlined; BusinessGrid
+ * lazy-loads the rest from `/businesses.json` on hydration. Both share the
+ * same daily shuffle (seed = today's date in Israel), so the order rotates
+ * at midnight and no business sits at the top permanently.
  */
 const INITIAL_COUNT = 30;
 
@@ -40,24 +29,28 @@ export default async function HomePage() {
   const shuffled = shuffleWithSeed(businesses, seed);
   const initialBusinesses = shuffled.slice(0, INITIAL_COUNT).map(toBusinessSummary);
 
-  // Per-category counts, computed server-side once so the "search by
-  // category" modal can show them the moment the home page loads (the
-  // full catalog lazy-loads for search/filtering, but counts are tiny and
-  // fit comfortably in the initial HTML payload).
   const categoryCounts: Record<string, number> = {};
   for (const b of businesses) {
     categoryCounts[b.category] = (categoryCounts[b.category] ?? 0) + 1;
   }
 
+  // Towns that actually have businesses, most businesses first.
+  const townCounts: Record<string, number> = {};
+  for (const b of businesses) townCounts[b.town] = (townCounts[b.town] ?? 0) + 1;
+  const activeTowns = Object.keys(townCounts).sort((a, b) => townCounts[b] - townCounts[a]);
+
   return (
     <>
-      <Hero businessCount={businesses.length} />
+      <Hero towns={activeTowns} />
+      <HeroStats
+        businessCount={businesses.length}
+        townCount={towns.length}
+        categoryCount={categories.length}
+      />
 
-      <BusinessTypesShowcase />
+      <BusinessTypesShowcase categoryCounts={categoryCounts} categoryTotal={categories.length} />
 
-      <SupportBanner />
-
-      <section id="businesses" className="container-page py-10 sm:py-14 scroll-mt-20">
+      <section id="businesses" className="container-page pt-16 sm:pt-20 pb-16 scroll-mt-4">
         <BusinessGrid
           initialBusinesses={initialBusinesses}
           totalCount={businesses.length}
@@ -66,6 +59,10 @@ export default async function HomePage() {
           towns={towns}
         />
       </section>
+
+      <SupportBanner />
+      <div className="h-10" />
+      <JoinSection />
     </>
   );
 }

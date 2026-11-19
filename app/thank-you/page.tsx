@@ -26,7 +26,12 @@ export default function ThankYouPage() {
       </p>
 
       <p className="text-base text-muted-foreground mb-8">
-        אם נצטרך פרטים נוספים, ניצור איתכם קשר במספר שהשארתם.
+        אם נצטרך פרטים נוספים, ניצור איתכם קשר במספר שהשארתם. בינתיים אפשר לראות ולעדכן את
+        הפרטים ב
+        <Link href="/account/" className="text-primary font-medium underline">
+          אזור האישי
+        </Link>
+        .
       </p>
 
       <div className="rounded-2xl bg-primary text-primary-foreground p-6 sm:p-8 mb-8">

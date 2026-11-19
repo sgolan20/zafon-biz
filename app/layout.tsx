@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
-import { Rubik } from "next/font/google";
+import { Heebo } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { CtaTracker } from "@/components/CtaTracker";
 
-const rubik = Rubik({
-  variable: "--font-rubik",
+const heebo = Heebo({
+  variable: "--font-heebo",
+  weight: ["400", "500", "600", "700", "800", "900"],
   subsets: ["hebrew", "latin"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://zafon-biz.web.app"),
+  metadataBase: new URL(process.env.SITE_URL || "https://zafon-biz.sgolan20.workers.dev"),
   title: {
     default: "תומכים בצפון - קונים נכון | אינדקס עסקים מהצפון",
     template: "%s | תומכים בצפון - קונים נכון",
@@ -55,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="he" dir="rtl" className={`${rubik.variable} h-full antialiased`}>
+    <html lang="he" dir="rtl" className={`${heebo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <SiteHeader />
         <main className="flex-1">{children}</main>

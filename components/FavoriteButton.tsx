@@ -33,10 +33,10 @@ export function FavoriteButton({ businessId, businessName }: FavoriteButtonProps
       // Hide until hydrated so users who already favorited don't see the
       // button flash from "not favorited" → "favorited" after hydration.
       style={{ visibility: hydrated ? "visible" : "hidden" }}
-      className={`inline-flex items-center gap-2 rounded-lg border-2 px-5 py-3 font-bold transition shadow-sm ${
+      className={`inline-flex items-center gap-2 min-h-[54px] rounded-[14px] border px-5 font-bold transition ${
         active
-          ? "bg-amber-400 text-white border-amber-400 hover:bg-amber-500"
-          : "bg-white text-amber-600 border-amber-300 hover:bg-amber-50"
+          ? "bg-accent-soft text-[#8a5a10] border-accent"
+          : "bg-white text-foreground border-border hover:border-accent"
       }`}
     >
       <Star className="h-5 w-5" fill={active ? "currentColor" : "none"} />

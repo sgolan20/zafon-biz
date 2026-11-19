@@ -9,13 +9,16 @@
  *
  * Built on a single react-hook-form instance — `trigger(field)` is used to
  * validate just the current step's field before advancing.
+ *
+ * Visitors who aren't logged in get two extra steps (account email +
+ * password) so the business owner can later log in and edit the listing.
+ * Submits to POST /api/register, which re-validates everything.
  */
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import {
   Loader2,
   Send,
@@ -28,16 +31,15 @@ import {
 } from "lucide-react";
 import {
   businessRegistrationSchema,
-  normalizeUrl,
   type BusinessRegistrationInput,
 } from "@/lib/validation";
-import { db } from "@/lib/firebase";
-import { slugify } from "@/lib/utils";
 import type { Category, Town } from "@/lib/types";
 
 interface RegistrationFormProps {
   categories: Category[];
   towns: Town[];
+  /** Email of the logged-in owner, or null for an anonymous visitor. */
+  loggedInEmail: string | null;
 }
 
 type FieldKey = Exclude<
@@ -51,7 +53,7 @@ type StepDef = {
   question: string;
   hint?: string;
   placeholder?: string;
-  type: "text" | "textarea" | "tel" | "email" | "url" | "category" | "town";
+  type: "text" | "textarea" | "tel" | "email" | "url" | "category" | "town" | "password";
   inputMode?: "text" | "tel" | "email" | "url";
   ltr?: boolean;
 };
@@ -174,10 +176,33 @@ const STEPS: StepDef[] = [
   },
 ];
 
-const REVIEW_STEP_INDEX = STEPS.length; // step after the last input step
+const ACCOUNT_STEPS: StepDef[] = [
+  {
+    key: "accountEmail",
+    required: true,
+    question: "באיזה אימייל תתחברו לאזור האישי?",
+    hint: "איתו ועם הסיסמה תוכלו לעדכן את פרטי העסק בכל זמן",
+    placeholder: "you@example.com",
+    type: "email",
+    inputMode: "email",
+    ltr: true,
+  },
+  {
+    key: "accountPassword",
+    required: true,
+    question: "בחרו סיסמה",
+    hint: "לפחות 8 תווים",
+    type: "password",
+    ltr: true,
+  },
+];
 
-export function RegistrationForm({ categories, towns }: RegistrationFormProps) {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function RegistrationForm({ categories, towns, loggedInEmail }: RegistrationFormProps) {
   const router = useRouter();
+  const steps = loggedInEmail ? STEPS : [...STEPS, ...ACCOUNT_STEPS];
+  const REVIEW_STEP_INDEX = steps.length; // step after the last input step
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [townFilter, setTownFilter] = useState("");
@@ -200,6 +225,8 @@ export function RegistrationForm({ categories, towns }: RegistrationFormProps) {
       facebook: "",
       instagram: "",
       website_url_confirm: "",
+      accountEmail: "",
+      accountPassword: "",
     },
   });
 
@@ -209,14 +236,15 @@ export function RegistrationForm({ categories, towns }: RegistrationFormProps) {
     control,
     trigger,
     setValue,
+    setError,
     getValues,
     watch,
     formState: { errors, isSubmitting },
   } = form;
 
   const isReview = step >= REVIEW_STEP_INDEX;
-  const current = isReview ? null : STEPS[step];
-  const totalSteps = STEPS.length + 1; // +1 for review
+  const current = isReview ? null : steps[step];
+  const totalSteps = steps.length + 1; // +1 for review
   const progress = ((step + 1) / totalSteps) * 100;
 
   // Auto-focus the input when step changes
@@ -235,6 +263,14 @@ export function RegistrationForm({ categories, towns }: RegistrationFormProps) {
     if (current.required) {
       const value = getValues(current.key);
       if (typeof value === "string" && value.trim().length === 0) return;
+    }
+    if (current.key === "accountEmail" && !EMAIL_RE.test(getValues("accountEmail")?.trim() ?? "")) {
+      setError("accountEmail", { message: "כתובת אימייל לא תקינה" });
+      return;
+    }
+    if (current.key === "accountPassword" && (getValues("accountPassword") ?? "").length < 8) {
+      setError("accountPassword", { message: "הסיסמה צריכה להכיל לפחות 8 תווים" });
+      return;
     }
     setStep(step + 1);
   }
@@ -285,45 +321,18 @@ export function RegistrationForm({ categories, towns }: RegistrationFormProps) {
     }
 
     try {
-      const baseSlug = slugify(data.name);
-      const uniqueSlug = `${baseSlug}-${Date.now().toString(36)}`;
-      const shuffleSeed = Math.floor(Math.random() * 1_000_000_000);
-
-      const payload: Record<string, unknown> = {
-        status: "pending",
-        name: data.name.trim(),
-        slug: uniqueSlug,
-        description: data.description.trim(),
-        category: data.category,
-        town: data.town,
-        contactName: data.contactName.trim(),
-        phone: data.phone.trim(),
-        createdAt: serverTimestamp(),
-        shuffleSeed,
-      };
-
-      const optionalFields = [
-        "address",
-        "whatsapp",
-        "email",
-        "website",
-        "openingHours",
-        "facebook",
-        "instagram",
-      ] as const;
-      const urlFields = new Set(["website", "facebook", "instagram"]);
-
-      for (const key of optionalFields) {
-        const value = data[key];
-        if (typeof value === "string" && value.trim().length > 0) {
-          payload[key] = urlFields.has(key)
-            ? normalizeUrl(value)
-            : value.trim();
-        }
+      const res = await fetch("/api/register/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setSubmitError(result.error ?? "שגיאה בשליחת הטופס. אנא נסו שוב.");
+        return;
       }
-
-      await addDoc(collection(db, "businesses"), payload);
       router.push("/thank-you/");
+      router.refresh();
     } catch (err) {
       console.error("Failed to submit business:", err);
       setSubmitError(
@@ -369,6 +378,7 @@ export function RegistrationForm({ categories, towns }: RegistrationFormProps) {
       >
         {isReview ? (
           <ReviewStep
+            steps={steps}
             values={values}
             categories={categories}
             towns={towns}
@@ -525,7 +535,11 @@ function StepRenderer({
       )}
 
       {/* Field */}
-      {step.type === "text" || step.type === "tel" || step.type === "email" || step.type === "url" ? (
+      {step.type === "text" ||
+      step.type === "tel" ||
+      step.type === "email" ||
+      step.type === "url" ||
+      step.type === "password" ? (
         <input
           {...register(step.key)}
           ref={(el) => {
@@ -537,6 +551,13 @@ function StepRenderer({
           // own (lenient) validator gets a chance.
           type={step.type === "text" || step.type === "url" ? "text" : step.type}
           inputMode={step.inputMode}
+          autoComplete={
+            step.type === "password"
+              ? "new-password"
+              : step.key === "accountEmail"
+                ? "email"
+                : undefined
+          }
           dir={step.ltr ? "ltr" : undefined}
           placeholder={step.placeholder}
           className={inputClass}
@@ -659,16 +680,19 @@ function StepRenderer({
 // =====================================================================
 
 function ReviewStep({
+  steps,
   values,
   onEdit,
 }: {
+  steps: StepDef[];
   values: BusinessRegistrationInput;
   categories: Category[];
   towns: Town[];
   onEdit: (step: number) => void;
 }) {
-  const items = STEPS.map((s, idx) => {
-    const v = (values[s.key] as string | undefined)?.toString().trim() || "";
+  const items = steps.map((s, idx) => {
+    const raw = (values[s.key] as string | undefined)?.toString().trim() || "";
+    const v = s.type === "password" && raw ? "•".repeat(raw.length) : raw;
     return { ...s, value: v, idx };
   });
 

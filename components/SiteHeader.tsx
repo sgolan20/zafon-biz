@@ -1,49 +1,70 @@
-import Link from "next/link";
-import { Heart } from "lucide-react";
+"use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Heart, UserRound } from "lucide-react";
+import { Logo } from "./Logo";
+
+/**
+ * Site header. On the home page it floats transparently over the video
+ * hero; everywhere else it is a solid dark-green bar that sticks to the top.
+ */
 export function SiteHeader() {
+  const pathname = usePathname();
+  const overlay = pathname === "/";
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/75">
-      <div className="container-page flex h-16 items-center justify-between gap-2 sm:gap-4">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform group-hover:scale-105">
-            <Heart className="h-5 w-5" fill="currentColor" />
-          </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-base font-bold text-foreground">תומכים בצפון</span>
-            <span className="text-xs text-muted-foreground">קונים נכון</span>
-          </div>
+    <header
+      className={
+        overlay
+          ? "absolute top-0 inset-x-0 z-40 w-full"
+          : "sticky top-0 z-40 w-full bg-ink border-b border-white/10"
+      }
+    >
+      <div className="container-page flex h-[76px] sm:h-[84px] items-center justify-between gap-2 sm:gap-4">
+        <Link href="/" className="group">
+          <Logo />
         </Link>
 
-        <nav className="flex items-center gap-0.5 sm:gap-2">
+        <nav aria-label="ראשי" className="flex items-center gap-1 sm:gap-2">
+          <div className="hidden md:flex items-center gap-1">
+            <NavLink href="/#businesses">עסקים</NavLink>
+            <NavLink href="/about/">אודות</NavLink>
+            <Link
+              href="/support/"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[15px] font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <Heart className="h-4 w-4 text-gold-text" fill="currentColor" />
+              תמיכה במיזם
+            </Link>
+          </div>
           <Link
-            href="/"
-            className="rounded-md px-2 sm:px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            href="/account/"
+            aria-label="האזור האישי לבעלי עסקים"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/35 px-3 sm:px-4 min-h-11 text-[15px] font-semibold text-white hover:bg-white/10 transition-colors"
           >
-            עסקים
-          </Link>
-          <Link
-            href="/about/"
-            className="rounded-md px-2 sm:px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-          >
-            אודות
-          </Link>
-          <Link
-            href="/support/"
-            className="inline-flex items-center gap-1.5 rounded-md px-2 sm:px-3 py-2 text-sm font-medium text-primary hover:bg-primary-soft transition-colors"
-            aria-label="תמיכה במיזם"
-          >
-            <Heart className="h-4 w-4" fill="currentColor" />
-            <span className="hidden sm:inline">תמיכה במיזם</span>
+            <UserRound className="h-[18px] w-[18px]" />
+            <span className="hidden sm:inline">האזור שלי</span>
           </Link>
           <Link
             href="/register/"
-            className="rounded-md bg-accent px-2.5 sm:px-4 py-2 text-sm font-bold text-accent-foreground hover:bg-accent/90 transition-colors shadow-sm"
+            className="inline-flex items-center rounded-xl bg-accent px-3.5 sm:px-5 min-h-11 text-[15px] font-extrabold text-accent-foreground hover:bg-accent/90 transition-colors shadow-sm"
           >
             הוסיפו עסק
           </Link>
         </nav>
       </div>
     </header>
+  );
+}
+
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="rounded-lg px-3 py-2 text-[15px] font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors"
+    >
+      {children}
+    </Link>
   );
 }

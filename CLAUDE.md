@@ -7,68 +7,78 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev            # Next.js dev server (reads Firestore live via firebase-admin)
-npm run build          # Produces static export into ./out  (no prebuild hook — see note below)
-npm run lint           # ESLint (eslint.config.mjs, Next.js core-web-vitals + TS)
+npm run dev            # Next.js dev server; D1 binding comes from wrangler.jsonc (local D1)
+npm run preview        # OpenNext build + wrangler dev (closest to production)
+npm run deploy         # OpenNext build + deploy to Cloudflare Workers
+npm run lint
+npm run cf-typegen     # regenerate cloudflare-env.d.ts after changing wrangler.jsonc
 
-# Before `npm run build` you must refresh public/businesses.json manually, because
-# the home page lazy-loads the full catalog from it after hydration:
-GOOGLE_APPLICATION_CREDENTIALS=.secrets/sa-key.json npx tsx scripts/dump-businesses.ts
+npm run db:migrate         # apply migrations/ to the production D1
+npm run db:migrate:local   # same, local D1 (.wrangler/)
 
-# Smart build + deploy (what the GitHub Actions cron runs — skips build if no
-# Firestore changes since last deploy; FORCE_BUILD=1 to override)
-npx tsx scripts/build-if-needed.ts
-
-# One-off ops scripts (all under scripts/, run with `npx tsx`)
-npx tsx scripts/seed-firestore.ts       # seed categories + towns
-npx tsx scripts/create-admin.ts         # add an admin to /admins/{uid}
-npx tsx scripts/regenerate-slugs.ts     # recompute Latin slugs
-npx tsx scripts/notify-pending.ts       # open a GitHub Issue for new pending submissions
-npx tsx scripts/ga-report.ts            # pull a Google Analytics report
+# Set-password link for any user (first admin login, or while email is off)
+npx tsx scripts/password-link.ts <email>            # production
+npx tsx scripts/password-link.ts <email> --local    # wrangler dev on :8788
 ```
 
-Most scripts use firebase-admin and expect either `GOOGLE_APPLICATION_CREDENTIALS` (file path) or `FIREBASE_SERVICE_ACCOUNT` (raw JSON) in the environment. On Shahar's machine, `gcloud auth application-default login` Works because `firebase-admin` falls back to ADC.
+Wrangler is pinned to the "Shahar Golan" Cloudflare account via `account_id` in wrangler.jsonc.
 
 ## Architecture
 
-This is a Hebrew, RTL static directory of businesses in northern Israel, deployed to Firebase Hosting at https://zafon-biz.web.app.
+Hebrew, RTL directory of businesses in northern Israel. Everything runs on Cloudflare:
+a Next.js app on **Workers** (via `@opennextjs/cloudflare`), data in **D1** (`zafon-biz`,
+binding `DB`). Live at https://zafon-biz.sgolan20.workers.dev. Firebase is no longer used.
 
-### The public site is fully static
+### Rendering
 
-`next.config.ts` sets `output: 'export'` + `trailingSlash: true`. There is no Next.js server at runtime — every route is pre-rendered to `./out/` and served by Firebase Hosting. The public site never talks to Firestore; it reads data at build time via `firebase-admin`.
+Pages are server-rendered on each request and read straight from D1 (`export const dynamic =
+"force-dynamic"`), so approvals and owner edits show up immediately — no rebuilds, no cron.
+`next.config.ts` keeps `trailingSlash: true`, so **API calls must end with `/`**
+(otherwise a 308 redirect).
 
-Two separate Firebase SDKs are used:
+### Data layer
 
-- **`lib/firebase-admin.ts`** — server-side / build-time. Reads `businesses` / `categories` / `towns` during `next build`. Uses module-level Promise caches so a single build makes one Firestore round-trip per collection even when hundreds of static pages consume the same data ([app/business/[slug]/page.tsx](app/business/[slug]/page.tsx) is the heavy one via `generateStaticParams`).
-- **`lib/firebase.ts`** — client SDK. Used only by the public registration form (anonymous create on `businesses`) and the admin panel (auth + read/write). Security rules in [firestore.rules](firestore.rules) enforce this boundary.
+- [lib/db.ts](lib/db.ts) — all D1 queries, row ↔ `Business` mapping (snake_case columns,
+  camelCase types). `getEnv()` / `getDb()` via `getCloudflareContext()`.
+- Schema: [migrations/](migrations/). Tables: `businesses`, `categories`, `towns`, `users`,
+  `sessions`, `password_tokens`, `rate_limits`.
+- Home page inlines the first 30 businesses; `BusinessGrid` lazy-loads `/businesses.json`
+  ([app/businesses.json/route.ts](app/businesses.json/route.ts)) for search.
+- Daily shuffle: both are shuffled with seed = today's date in Asia/Jerusalem
+  ([lib/shuffle.ts](lib/shuffle.ts)), computed per request.
 
-### Home page payload strategy
+### Accounts ([lib/auth.ts](lib/auth.ts))
 
-The home page inlines only the first 30 businesses (SEO + above-the-fold). `BusinessGrid` then fetches `/businesses.json` on hydration to power search and paginated reveal — see comments at the top of [app/page.tsx](app/page.tsx) and [components/BusinessGrid.tsx](components/BusinessGrid.tsx). `scripts/dump-businesses.ts` writes that JSON. **Gotcha:** there is no `prebuild` script in `package.json`, so `npm run build` alone does NOT refresh `public/businesses.json`. Run `dump-businesses.ts` first (or use `build-if-needed.ts` which chains them correctly). The comment in `scripts/build-if-needed.ts` referencing "the prebuild script" is stale.
+- One `users` row per email. `role` = `owner` | `admin`; the only admin is sgolan20@gmail.com.
+- A business belongs to `businesses.owner_id`. Migrated businesses were linked by their email;
+  32 had no email and have no owner until the admin adds one (admin edit sets the owner from
+  the business email, creating the user if needed).
+- Migrated users start with `password_hash = NULL` and set one via "forgot password".
+- Passwords: PBKDF2-SHA256 100k (Workers max). Sessions: random token in `zb_session`
+  HttpOnly cookie, SHA-256 stored in `sessions`. Password links: single-use, SHA-256 stored.
+- Route Handlers under `app/api/` check `sameOrigin()` + session ([lib/api.ts](lib/api.ts));
+  all input is re-validated with the shared Zod schemas in [lib/validation.ts](lib/validation.ts).
+- Pages: `/login`, `/forgot-password`, `/reset-password?token=`, `/account` (owner),
+  `/account/business/[id]`, `/admin`, `/admin/business/[id]`.
 
-### Daily Shuffle (fairness)
+### Email & notifications ([lib/notify.ts](lib/notify.ts))
 
-Both the inlined 30 on the home page and the full `businesses.json` are shuffled with the same deterministic seed = today's date in `Asia/Jerusalem` ([lib/shuffle.ts](lib/shuffle.ts)). All visitors on the same day see the same order, but order rotates daily so no business is permanently on top. The GitHub Actions cron rebuilds at 22:00 UTC (midnight Israel) to rotate it.
+- Password emails use Cloudflare Email Service (`send_email` binding named `EMAIL`) and need
+  `EMAIL_FROM` in wrangler.jsonc + a domain onboarded to Email Service. **Not connected yet**:
+  until then the admin "users" tab copies a set-password link to send by WhatsApp.
+- New registrations email `ADMIN_EMAIL` through the same binding (no-op until email is
+  connected); pending businesses are always listed first in `/admin`. Nothing goes through
+  GitHub — no Actions, no cron, no issues.
 
-### Smart Build trigger
+### Migration from Firebase (one-off, Nov 2026)
 
-[scripts/build-if-needed.ts](scripts/build-if-needed.ts) is invoked by the cron every ~30 minutes. It compares a stored watermark at `/meta/lastBuild` (timestamp + `approvedCount`) against current Firestore state and exits without rebuilding if nothing changed. Count-delta catches deletes/unapprovals that a pure `approvedAt >` watermark would miss. `FORCE_BUILD=1` overrides.
-
-### Admin notifications
-
-No email service. [scripts/notify-pending.ts](scripts/notify-pending.ts) opens a GitHub Issue in this repo when new pending businesses appear; GitHub sends the owner an email automatically. Last-notified watermark at `/meta/lastNotified`. Repo is public, so issue bodies contain only name + town + category — no PII.
-
-### Firestore collections & rules
-
-- `businesses` — statuses `pending` | `approved` | `rejected`. Public anon users may `create` with status `pending` (constraints enforced by [firestore.rules](firestore.rules) + [lib/validation.ts](lib/validation.ts) Zod schemas). Reads, updates, deletes are admin-only.
-- `categories`, `towns` — public read, admin write.
-- `admins/{uid}` — gate for `isAdmin()`. Added manually via Firebase Console; no client write path.
-- `meta/lastBuild`, `meta/lastNotified` — cron state.
+`scripts/migrate/export-firestore.ts` → `.migration/firestore.json` →
+`scripts/migrate/firestore-to-sql.ts` → `.migration/data.sql` → `wrangler d1 execute`.
+`.migration/` is gitignored (contact details). `firebase-admin` stays as a devDependency only
+for these scripts.
 
 ### Path alias & types
 
-`@/*` → project root (see `tsconfig.json`). Shared types live in [lib/types.ts](lib/types.ts). Note the intentional split between `Business` (full doc) and `BusinessSummary` (slim shape used in the grid and search index — only what the card UI needs).
-
-### Firestore Timestamps
-
-`firebase-admin` returns `Timestamp` objects; these are normalized to ISO strings in [lib/firebase-admin.ts](lib/firebase-admin.ts) before being passed as props, because Server Component props must be JSON-serializable.
+`@/*` → project root. Shared types in [lib/types.ts](lib/types.ts): `Business` (full row) vs
+`BusinessSummary` (slim shape for the grid/search). Worker binding types in
+`cloudflare-env.d.ts` (generated).

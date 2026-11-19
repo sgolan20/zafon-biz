@@ -2,14 +2,15 @@
  * Core types for the תומכים בצפון business directory.
  *
  * These types are shared between client and server (build-time) code.
- * Firestore Timestamp values are normalized to ISO strings before being
- * passed to React components, since Server Components serialize their props.
+ * Dates are ISO strings (as stored in D1).
  */
 
 export type BusinessStatus = "pending" | "approved" | "rejected";
 
 export interface Business {
   id: string;
+  /** users.id of the business owner (linked by email). */
+  ownerId?: string;
   status: BusinessStatus;
 
   // Core info
@@ -42,6 +43,7 @@ export interface Business {
 
   // Metadata (ISO strings, not Timestamps)
   createdAt: string;
+  updatedAt?: string;
   approvedAt?: string;
   approvedBy?: string;
   shuffleSeed: number;
@@ -65,6 +67,7 @@ export interface BusinessSummary {
   description: string;
   town: string;
   phone: string;
+  whatsapp?: string;
   tags?: string[];
 }
 
@@ -82,11 +85,13 @@ export interface Town {
   isBorderCommunity: boolean;
 }
 
-export interface Admin {
+export type UserRole = "owner" | "admin";
+
+export interface SessionUser {
+  id: string;
   email: string;
-  uid: string;
-  role: "super" | "editor";
-  addedAt: string;
+  role: UserRole;
+  hasPassword: boolean;
 }
 
 /**

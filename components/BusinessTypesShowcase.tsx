@@ -1,89 +1,83 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 
-type Scene = {
-  src: string;
-  alt: string;
-  title: string;
-  subtitle: string;
-};
+type Face = { category: string; title: string; src: string; alt: string };
 
-const SCENES: Scene[] = [
-  {
-    src: "/images/scene-cheese.webp",
-    alt: "ידיים מבוגרות חותכות גלגל גבינה במרתף יישון בגליל",
-    title: "גבנים ומחלבות",
-    subtitle: "גבינות עיזים וכבשים מהגליל",
-  },
-  {
-    src: "/images/scene-winemaker.webp",
-    alt: "ידיים פותחות בקבוק יין אדום במרתף יין גלילי בין חביות עץ",
-    title: "יקבים ויינות",
-    subtitle: "יין מקומי מכרמי הצפון",
-  },
-  {
-    src: "/images/scene-potter.webp",
-    alt: "אמנית קרמיקה ישראלית יוצרת כד ליד אובניים בצפון",
-    title: "אמנים ויוצרים",
-    subtitle: "קרמיקה, אומנות ועיצוב",
-  },
-  {
-    src: "/images/scene-carpenter.webp",
-    alt: "נגר ישראלי עובד בבית מלאכת עץ בצפון",
-    title: "נגרים ובעלי מלאכה",
-    subtitle: "ריהוט בעבודת יד מהגליל",
-  },
-  {
-    src: "/images/scene-tailor.webp",
-    alt: "ידיים זקנות תופרות במכונת תפירה ישנה בחנות חייט בצפון",
-    title: "חייטים ותפירה",
-    subtitle: "תיקונים ועבודות בהזמנה",
-  },
+/** One photo per category — a mix of town, field and workshop businesses. */
+const FACES: Face[] = [
+  { category: "מסעדנות וקייטרינג", title: "מסעדות וקייטרינג", src: "/images/v2/restaurant.jpg", alt: "שף מגיש מנה במסעדה מודרנית" },
+  { category: "חקלאות ומזון מקומי", title: "חקלאות ומזון מקומי", src: "/images/v2/orchard.jpg", alt: "חקלאי קוטף דובדבנים בפרדס ברמת הגולן" },
+  { category: "תיירות ואירוח", title: "תיירות ואירוח", src: "/images/v2/jeep.jpg", alt: "מדריך טיולים ליד ג׳יפ מול עמק החולה" },
+  { category: "יופי וטיפוח", title: "יופי וטיפוח", src: "/images/v2/salon.jpg", alt: "ספרית מעצבת שיער במספרה שכונתית" },
+  { category: "בנייה ושיפוצים", title: "בנייה ושיפוצים", src: "/images/v2/contractor.jpg", alt: "קבלן שיפוצים מודד קיר בדירה חדשה" },
+  { category: "ספורט ופנאי", title: "ספורט ופנאי", src: "/images/v2/yoga.jpg", alt: "שיעור יוגה על דק עץ בין העצים" },
+  { category: "אומנות ועבודת יד", title: "אומנות ועבודת יד", src: "/images/v2/potter.jpg", alt: "קדר יוצר כד על אובניים" },
+  { category: "מתנות ומזכרות", title: "מתנות ומזכרות", src: "/images/v2/cafe.jpg", alt: "בעלת חנות מתנות מאחורי הדלפק" },
 ];
 
-export function BusinessTypesShowcase() {
+/**
+ * "The faces of the north" — eight category tiles with photos. Each links to
+ * the directory pre-filtered to that category.
+ */
+export function BusinessTypesShowcase({
+  categoryCounts,
+  categoryTotal,
+}: {
+  categoryCounts: Record<string, number>;
+  categoryTotal: number;
+}) {
   return (
-    <section className="bg-muted/40 border-y">
-      <div className="container-page py-14 sm:py-20">
-        <div className="max-w-2xl mb-10 sm:mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
-            עסקים אמיתיים. אנשים אמיתיים.
+    <section id="faces" className="container-page pt-24 sm:pt-28 pb-8">
+      <div className="flex flex-wrap items-end justify-between gap-5 mb-9">
+        <div className="flex flex-col gap-2.5 max-w-[640px]">
+          <span className="eyebrow">הפנים של הצפון</span>
+          <h2 className="text-3xl sm:text-[44px] leading-[1.1] font-extrabold tracking-tight">
+            מהפרדס ועד המספרה בשכונה
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-            מאחורי כל עסק באינדקס עומדים תושבי הצפון - אנשים שבחרו לבנות את הפרנסה שלהם
-            כאן, ולא לוותר. הזמנה מהם היא לא רק קנייה, היא מעשה תמיכה.
+          <p className="text-lg leading-relaxed text-muted-foreground">
+            עסקים קטנים ומשפחתיים שממשיכים לעבוד ולשרת את האזור, גם אחרי תקופה לא פשוטה. בחרו
+            תחום ומצאו את מי שעושה את זה הכי טוב, קרוב אליכם.
           </p>
         </div>
+        <Link
+          href="/#businesses"
+          className="inline-flex items-center gap-2 min-h-11 rounded-xl border border-input px-4 font-bold hover:bg-white transition-colors"
+        >
+          כל {categoryTotal} התחומים
+          <ChevronLeft className="h-[18px] w-[18px]" />
+        </Link>
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 sm:gap-6">
-          {SCENES.map((scene) => (
-            <article
-              key={scene.src}
-              className="group relative overflow-hidden rounded-2xl shadow-md ring-1 ring-black/5 bg-white"
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+        {FACES.map((f) => {
+          const count = categoryCounts[f.category] ?? 0;
+          return (
+            <Link
+              key={f.category}
+              href={`/?cat=${encodeURIComponent(f.category)}#businesses`}
+              className="group relative block aspect-[4/5] overflow-hidden rounded-2xl sm:rounded-[20px] bg-primary"
             >
-              <div className="relative aspect-[3/2]">
-                <Image
-                  src={scene.src}
-                  alt={scene.alt}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 20vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent"
-                />
-                <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-                  <h3 className="text-base lg:text-[15px] xl:text-base font-bold leading-tight">
-                    {scene.title}
-                  </h3>
-                  <p className="text-xs lg:text-[11px] xl:text-xs text-white/85 mt-0.5 leading-snug">
-                    {scene.subtitle}
-                  </p>
-                </div>
+              <Image
+                src={f.src}
+                alt={f.alt}
+                fill
+                sizes="(max-width: 1024px) 50vw, 25vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-gradient-to-t from-[rgba(10,24,17,0.88)] via-[rgba(10,24,17,0.15)] to-transparent"
+              />
+              <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 flex flex-col gap-0.5">
+                <span className="text-base sm:text-[21px] font-extrabold text-white leading-tight">{f.title}</span>
+                <span className="text-xs sm:text-sm text-[#e8e2d4]">
+                  {count === 1 ? "עסק אחד" : `${count} עסקים`}
+                </span>
               </div>
-            </article>
-          ))}
-        </div>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

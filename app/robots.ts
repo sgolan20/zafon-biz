@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { siteUrl } from "@/lib/notify";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -8,9 +9,17 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin/", "/thank-you/"],
+        disallow: [
+          "/admin/",
+          "/account/",
+          "/api/",
+          "/login/",
+          "/forgot-password/",
+          "/reset-password/",
+          "/thank-you/",
+        ],
       },
     ],
-    sitemap: "https://zafon-biz.web.app/sitemap.xml",
+    sitemap: `${siteUrl()}/sitemap.xml`,
   };
 }

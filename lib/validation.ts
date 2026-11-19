@@ -1,8 +1,8 @@
 /**
  * Zod schemas for the public registration form and admin operations.
  *
- * Mirrored (loosely) by the Firestore security rules in firestore.rules.
- * Keep both in sync when you change required fields or constraints.
+ * The same schemas run on the client (react-hook-form) and on the server
+ * (Route Handlers in app/api), so the server never trusts the browser.
  */
 
 import { z } from "zod";
@@ -30,7 +30,7 @@ function isUrlOrDomain(v: string): boolean {
 
 /**
  * Normalize a user-entered URL or domain to a full URL with protocol.
- * Used by the submit handler before writing to Firestore so that all
+ * Used before writing to D1 so that all
  * stored links are clickable.
  */
 export function normalizeUrl(v: string): string {
@@ -96,6 +96,20 @@ export const businessRegistrationSchema = z.object({
 
   // Honeypot - bots tend to fill all fields. Real users won't see this.
   website_url_confirm: z.string().max(0, "שדה חייב להיות ריק").optional(),
+
+  // Account fields - only required when the visitor isn't logged in
+  // (enforced in the form and in /api/register).
+  accountEmail: z.string().optional().or(z.literal("")),
+  accountPassword: z.string().optional().or(z.literal("")),
 });
 
 export type BusinessRegistrationInput = z.infer<typeof businessRegistrationSchema>;
+
+/** The editable business fields alone (owner edit, admin edit, registration). */
+export const businessFieldsSchema = businessRegistrationSchema.omit({
+  website_url_confirm: true,
+  accountEmail: true,
+  accountPassword: true,
+});
+
+export const emailSchema = z.string().trim().email("כתובת אימייל לא תקינה").max(200);

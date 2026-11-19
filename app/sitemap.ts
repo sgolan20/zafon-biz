@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
-import { getApprovedBusinesses } from "@/lib/firebase-admin";
+import { getApprovedBusinesses } from "@/lib/db";
+import { siteUrl } from "@/lib/notify";
 
-export const dynamic = "force-static";
-
-const SITE_URL = "https://zafon-biz.web.app";
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const SITE_URL = siteUrl();
   const businesses = await getApprovedBusinesses();
 
   const businessEntries: MetadataRoute.Sitemap = businesses.map((b) => ({
