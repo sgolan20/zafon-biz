@@ -21,8 +21,8 @@ export default async function LoginPage({
 
   return (
     <AuthCard
-      title="כניסה לבעלי עסקים"
-      subtitle="היכנסו עם האימייל של העסק כדי לעדכן את הפרטים שלכם. פעם ראשונה כאן? לחצו על ״שכחתי סיסמה״ ותקבלו קישור לקביעת סיסמה."
+      title="ברוכים השבים"
+      subtitle="היכנסו עם האימייל של העסק כדי לעדכן את הפרטים, השעות והתיאור שלכם."
     >
       <LoginForm next={typeof next === "string" ? next : undefined} />
     </AuthCard>

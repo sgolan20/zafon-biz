@@ -1,18 +1,27 @@
 import type { Metadata } from "next";
 import { AuthCard, ForgotPasswordForm } from "@/components/auth/AuthForms";
+import { emailEnabled } from "@/lib/notify";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "קביעת סיסמה",
+  title: "שכחתי סיסמה",
   robots: { index: false, follow: false },
 };
 
 export default function ForgotPasswordPage() {
+  const enabled = emailEnabled();
   return (
     <AuthCard
-      title="קביעת סיסמה / שכחתי סיסמה"
-      subtitle="הזינו את האימייל שרשום אצלנו לעסק, ונשלח אליו קישור לקביעת סיסמה חדשה."
+      eyebrow="קביעת סיסמה"
+      title="שכחתם סיסמה?"
+      subtitle={
+        enabled
+          ? "הזינו את האימייל שרשום אצלנו לעסק, ונשלח אליו קישור לקביעת סיסמה חדשה."
+          : "זה קורה לכולם. גם אם העסק שלכם עבר אלינו מהאתר הקודם ועוד אין לכם סיסמה, נסדר לכם אחת."
+      }
     >
-      <ForgotPasswordForm />
+      <ForgotPasswordForm emailEnabled={enabled} />
     </AuthCard>
   );
 }
