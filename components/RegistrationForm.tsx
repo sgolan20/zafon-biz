@@ -488,7 +488,7 @@ export function RegistrationForm({ categories, towns, loggedInEmail }: Registrat
         </button>
 
         <div className="flex items-center gap-2">
-          {!isReview && current && !current.required && (
+          {!isReview && current && !current.required && !(current.key === "images" && (images.cover || images.logo)) && (
             <button
               type="button"
               onClick={skip}
