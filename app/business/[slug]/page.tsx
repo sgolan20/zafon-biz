@@ -17,6 +17,7 @@ import { getApprovedBusinesses, getBusinessBySlug } from "@/lib/db";
 import { formatPhone, telLink, whatsappLink } from "@/lib/utils";
 import { shuffleWithSeed, getTodayIsraelSeed } from "@/lib/shuffle";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { CoverFallback } from "@/components/BusinessCard";
 
 export const dynamic = "force-dynamic";
 
@@ -83,15 +84,24 @@ export default async function BusinessPage({ params }: PageProps) {
       />
 
       {/* Cover */}
-      <section className="relative h-[240px] sm:h-[340px] bg-primary">
-        <Image
-          src="/images/v2/hero2.jpg"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
+      <section className="relative h-[260px] sm:h-[400px] bg-primary">
+        {business.coverUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={business.coverUrl}
+            alt={`תמונה של ${business.name}`}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <Image
+            src="/images/v2/hero2.jpg"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+        )}
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-t from-[rgba(14,32,24,0.78)] to-[rgba(14,32,24,0.05)]"
@@ -130,9 +140,21 @@ export default async function BusinessPage({ params }: PageProps) {
                 </span>
               </div>
 
-              <h1 className="text-[34px] sm:text-[52px] leading-[1.05] font-black tracking-tight">
-                {business.name}
-              </h1>
+              <div className="flex items-center gap-4 sm:gap-5">
+                {business.logoUrl && (
+                  <span className="flex h-20 w-20 sm:h-24 sm:w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#eae3d5] bg-white shadow-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={business.logoUrl}
+                      alt={`הלוגו של ${business.name}`}
+                      className="h-full w-full object-contain p-1.5"
+                    />
+                  </span>
+                )}
+                <h1 className="text-[34px] sm:text-[52px] leading-[1.05] font-black tracking-tight">
+                  {business.name}
+                </h1>
+              </div>
 
               <p className="text-lg sm:text-[19px] leading-[1.75] text-[#2f3b34] whitespace-pre-line">
                 {business.description}
@@ -251,11 +273,19 @@ export default async function BusinessPage({ params }: PageProps) {
                 <Link
                   key={b.id}
                   href={`/business/${b.slug}/`}
-                  className="flex flex-col gap-2.5 rounded-[20px] border border-[#eae3d5] bg-white p-6 hover:shadow-[0_16px_40px_rgba(16,35,26,0.1)] transition-shadow"
+                  className="flex flex-col gap-2.5 overflow-hidden rounded-[20px] border border-[#eae3d5] bg-white pb-6 hover:shadow-[0_16px_40px_rgba(16,35,26,0.1)] transition-shadow"
                 >
-                  <span className="text-[19px] font-extrabold">{b.name}</span>
-                  <span className="text-sm text-muted-foreground">{b.town}</span>
-                  <span className="text-[15px] leading-relaxed text-[#3e4a43] line-clamp-3">
+                  <span className="relative block aspect-[16/9] bg-muted">
+                    {b.coverUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={b.coverUrl} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                    ) : (
+                      <CoverFallback name={b.name} />
+                    )}
+                  </span>
+                  <span className="px-6 pt-1 text-[19px] font-extrabold">{b.name}</span>
+                  <span className="px-6 text-sm text-muted-foreground">{b.town}</span>
+                  <span className="px-6 text-[15px] leading-relaxed text-[#3e4a43] line-clamp-3">
                     {b.shortDescription || b.description}
                   </span>
                 </Link>

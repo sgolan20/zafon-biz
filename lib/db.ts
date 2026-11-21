@@ -43,9 +43,16 @@ type BusinessRow = {
   approved_at: string | null;
   approved_by: string | null;
   shuffle_seed: number;
+  cover_key: string | null;
+  logo_key: string | null;
 };
 
 const u = <T,>(v: T | null): T | undefined => (v === null ? undefined : v);
+
+/** Public URL of an R2 object (served by app/media/[...key]/route.ts). */
+export function mediaUrl(key: string | null | undefined): string | undefined {
+  return key ? `/media/${key}` : undefined;
+}
 
 export function rowToBusiness(r: BusinessRow): Business {
   let tags: string[] | undefined;
@@ -83,6 +90,8 @@ export function rowToBusiness(r: BusinessRow): Business {
     approvedAt: u(r.approved_at),
     approvedBy: u(r.approved_by),
     shuffleSeed: r.shuffle_seed,
+    coverUrl: mediaUrl(r.cover_key),
+    logoUrl: mediaUrl(r.logo_key),
   };
 }
 
@@ -158,6 +167,8 @@ export function toBusinessSummary(b: Business): BusinessSummary {
     phone: b.phone,
     whatsapp: b.whatsapp,
     tags: b.tags,
+    coverUrl: b.coverUrl,
+    logoUrl: b.logoUrl,
   };
 }
 

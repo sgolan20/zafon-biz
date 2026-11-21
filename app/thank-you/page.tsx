@@ -26,8 +26,8 @@ export default function ThankYouPage() {
       </p>
 
       <p className="text-base text-muted-foreground mb-8">
-        אם נצטרך פרטים נוספים, ניצור איתכם קשר במספר שהשארתם. בינתיים אפשר לראות ולעדכן את
-        הפרטים ב
+        אם נצטרך פרטים נוספים, ניצור איתכם קשר במספר שהשארתם. בינתיים כדאי להוסיף תמונה ראשית
+        ולוגו, כדי שהעסק יבלוט באינדקס. עושים את זה ב
         <Link href="/account/" className="text-primary font-medium underline">
           אזור האישי
         </Link>

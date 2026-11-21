@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getBusinessById, getCategories, getTowns } from "@/lib/db";
 import { BusinessEditForm } from "@/components/BusinessEditForm";
+import { BusinessImagesEditor } from "@/components/BusinessImagesEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,18 @@ export default async function EditOwnBusinessPage({
       <p className="text-sm text-muted-foreground mb-6">
         עדכון פרטי העסק. השינויים מופיעים באתר מיד אחרי השמירה.
       </p>
+      <section className="mb-6">
+        <h2 className="text-lg font-extrabold mb-1">תמונות</h2>
+        <p className="text-sm text-muted-foreground mb-3">
+          התמונה הראשית והלוגו מופיעים בכרטיס של העסק באינדקס ובדף העסק.
+        </p>
+        <BusinessImagesEditor
+          businessId={business.id}
+          coverUrl={business.coverUrl}
+          logoUrl={business.logoUrl}
+        />
+      </section>
+      <h2 className="text-lg font-extrabold mb-3">פרטי העסק</h2>
       <div className="rounded-2xl border bg-white p-6 shadow-sm">
         <BusinessEditForm
           business={business}

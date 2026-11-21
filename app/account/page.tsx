@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ExternalLink, Pencil, Plus, ShieldCheck } from "lucide-react";
+import { ExternalLink, ImageIcon, Pencil, Plus, ShieldCheck } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { getBusinessesByOwner } from "@/lib/db";
 import type { BusinessStatus } from "@/lib/types";
@@ -73,11 +73,33 @@ export default async function AccountPage() {
           <ul className="divide-y">
             {businesses.map((b) => (
               <li key={b.id} className="flex flex-wrap items-center gap-3 py-3">
+                <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl bg-muted">
+                  {b.coverUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={b.coverUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-muted-foreground">
+                      <ImageIcon className="h-5 w-5" />
+                    </span>
+                  )}
+                </span>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-foreground">{b.name}</div>
                   <div className="text-xs text-muted-foreground">
                     {b.category} · {b.town}
                   </div>
+                  {(!b.coverUrl || !b.logoUrl) && (
+                    <Link
+                      href={`/account/business/${b.id}/`}
+                      className="mt-1 inline-block text-xs font-semibold text-[#8a5a10] hover:underline"
+                    >
+                      {!b.coverUrl && !b.logoUrl
+                        ? "הוסיפו תמונה ראשית ולוגו, כדי שהעסק יבלוט באינדקס"
+                        : !b.coverUrl
+                          ? "חסרה תמונה ראשית"
+                          : "חסר לוגו"}
+                    </Link>
+                  )}
                 </div>
                 <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS[b.status].cls}`}>
                   {STATUS[b.status].label}

@@ -20,14 +20,18 @@
       "migrations_dir": "migrations"
     }
   ],
+  // Business photos (cover + logo). Served through the Worker at /media/<key>.
+  "r2_buckets": [
+    { "binding": "MEDIA", "bucket_name": "zafon-biz-media" }
+  ],
   "vars": {
     // Public base URL, used in password-reset links and the sitemap.
     "SITE_URL": "https://zafon-biz.sgolan20.workers.dev",
     // Address used as "from" in password-reset emails. Empty = email disabled
     // (the admin panel can still copy a reset link to send by WhatsApp).
-    "EMAIL_FROM": "",
-    // Gets an email for every new registration (once email is connected).
-    "ADMIN_EMAIL": "sgolan20@gmail.com"
+    "EMAIL_FROM": ""
+    // ADMIN_EMAIL (who gets an email for every new registration) is a secret:
+    //   npx wrangler secret put ADMIN_EMAIL
   },
   "observability": { "enabled": true }
 }

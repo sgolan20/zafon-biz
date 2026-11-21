@@ -9,6 +9,7 @@
 import { ensureOwnerUser } from "@/lib/auth";
 import { fail, json, parseBusinessFields, readJson, requireAdmin } from "@/lib/api";
 import { getBusinessById, getDb, updateBusinessFields } from "@/lib/db";
+import { removeAllBusinessImages } from "@/lib/media";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -56,5 +57,6 @@ export async function DELETE(req: Request, { params }: Ctx) {
   if (g.error) return g.error;
   const { id } = await params;
   await getDb().prepare("DELETE FROM businesses WHERE id = ?").bind(id).run();
+  await removeAllBusinessImages(id);
   return json({ ok: true });
 }

@@ -42,6 +42,11 @@ export interface Business {
   instagram?: string;
 
   // Metadata (ISO strings, not Timestamps)
+  /** Main photo of the business (R2, via /media/...). */
+  coverUrl?: string;
+  /** Business logo (R2, via /media/...). */
+  logoUrl?: string;
+
   createdAt: string;
   updatedAt?: string;
   approvedAt?: string;
@@ -69,6 +74,8 @@ export interface BusinessSummary {
   phone: string;
   whatsapp?: string;
   tags?: string[];
+  coverUrl?: string;
+  logoUrl?: string;
 }
 
 export interface Category {

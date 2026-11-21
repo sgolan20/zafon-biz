@@ -47,6 +47,17 @@ Pages are server-rendered on each request and read straight from D1 (`export con
 - Daily shuffle: both are shuffled with seed = today's date in Asia/Jerusalem
   ([lib/shuffle.ts](lib/shuffle.ts)), computed per request.
 
+### Business photos ([lib/media.ts](lib/media.ts))
+
+- Each business has a main photo (`cover_key`) and a logo (`logo_key`), stored in **R2**
+  (bucket `zafon-biz-media`, binding `MEDIA`) under `businesses/<id>/<kind>-<rand>.<ext>`.
+- Upload/remove: `POST|DELETE /api/businesses/[id]/images/` (owner or admin). The browser
+  shrinks to WebP first ([components/BusinessImagesEditor.tsx](components/BusinessImagesEditor.tsx));
+  the server sniffs magic bytes (JPEG/PNG/WebP only) and caps size at 6 MB.
+- Served by [app/media/[...key]/route.ts](app/media/[...key]/route.ts) with immutable caching
+  (keys change on every upload). Deleting a business removes its R2 folder.
+- Cards and the business page fall back to a branded green block when there is no photo.
+
 ### Accounts ([lib/auth.ts](lib/auth.ts))
 
 - One `users` row per email. `role` = `owner` | `admin`; the only admin is sgolan20@gmail.com.

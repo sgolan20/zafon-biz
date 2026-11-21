@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getBusinessById, getCategories, getTowns } from "@/lib/db";
 import { BusinessEditForm } from "@/components/BusinessEditForm";
+import { BusinessImagesEditor } from "@/components/BusinessImagesEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,13 @@ export default async function AdminEditBusinessPage({
       <p className="text-sm text-muted-foreground mb-6">
         סטטוס: {business.status === "approved" ? "מאושר" : business.status === "pending" ? "ממתין" : "נדחה"}
       </p>
+      <div className="mb-6">
+        <BusinessImagesEditor
+          businessId={business.id}
+          coverUrl={business.coverUrl}
+          logoUrl={business.logoUrl}
+        />
+      </div>
       <div className="rounded-2xl border bg-white p-6 shadow-sm">
         <BusinessEditForm
           business={business}
