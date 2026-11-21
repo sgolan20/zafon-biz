@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- previews of picked files (blob URLs) */
+
 /**
  * Multi-step business registration wizard.
  *
@@ -28,7 +30,10 @@ import {
   Check,
   Pencil,
   Search,
+  ImagePlus,
+  Trash2,
 } from "lucide-react";
+import { shrinkImage } from "@/components/BusinessImagesEditor";
 import {
   businessRegistrationSchema,
   type BusinessRegistrationInput,
@@ -47,13 +52,18 @@ type FieldKey = Exclude<
   "website_url_confirm"
 >;
 
+/** Main photo / logo picked during registration, already shrunk to WebP. */
+type PickedImage = { blob: Blob; preview: string };
+type PickedImages = { cover?: PickedImage; logo?: PickedImage };
+
 type StepDef = {
-  key: FieldKey;
+  /** "images" is the photo step — not a form field, kept in local state. */
+  key: FieldKey | "images";
   required: boolean;
   question: string;
   hint?: string;
   placeholder?: string;
-  type: "text" | "textarea" | "tel" | "email" | "url" | "category" | "town" | "password";
+  type: "text" | "textarea" | "tel" | "email" | "url" | "category" | "town" | "password" | "images";
   inputMode?: "text" | "tel" | "email" | "url";
   ltr?: boolean;
 };
@@ -89,6 +99,13 @@ const STEPS: StepDef[] = [
     placeholder:
       "תארו את העסק, את המוצרים או השירותים שאתם מציעים, ומה הופך אתכם לייחודיים...",
     type: "textarea",
+  },
+  {
+    key: "images",
+    required: false,
+    question: "רוצים להוסיף תמונה ולוגו?",
+    hint: "אופציונלי. עסק עם תמונה בולט הרבה יותר באינדקס. אפשר גם להוסיף אחר כך מהאזור האישי.",
+    type: "images",
   },
   {
     key: "contactName",
@@ -206,6 +223,7 @@ export function RegistrationForm({ categories, towns, loggedInEmail }: Registrat
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [townFilter, setTownFilter] = useState("");
+  const [images, setImages] = useState<PickedImages>({});
 
   const form = useForm<BusinessRegistrationInput>({
     resolver: zodResolver(businessRegistrationSchema),
@@ -256,6 +274,10 @@ export function RegistrationForm({ categories, towns, loggedInEmail }: Registrat
 
   async function next() {
     if (!current) return;
+    if (current.key === "images") {
+      setStep(step + 1);
+      return;
+    }
     // Validate the current field; required fields block, optional ones
     // only block if the user typed something invalid (e.g. malformed email).
     const ok = await trigger(current.key);
@@ -281,6 +303,10 @@ export function RegistrationForm({ categories, towns, loggedInEmail }: Registrat
 
   function skip() {
     if (!current || current.required) return;
+    if (current.key === "images") {
+      setStep(step + 1);
+      return;
+    }
     // Clear any partial value so it doesn't get submitted
     setValue(current.key, "" as never, { shouldValidate: false });
     setStep(step + 1);
@@ -326,12 +352,29 @@ export function RegistrationForm({ categories, towns, loggedInEmail }: Registrat
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      const result = (await res.json().catch(() => ({}))) as { error?: string };
+      const result = (await res.json().catch(() => ({}))) as { error?: string; id?: string };
       if (!res.ok) {
         setSubmitError(result.error ?? "שגיאה בשליחת הטופס. אנא נסו שוב.");
         return;
       }
-      router.push("/thank-you/");
+      // The business exists now and belongs to this user (the API logged a
+      // new account in), so the photos go through the regular images API.
+      // A failed upload doesn't block: they can add photos from /account.
+      let photosFailed = false;
+      if (result.id) {
+        for (const kind of ["cover", "logo"] as const) {
+          const img = images[kind];
+          if (!img) continue;
+          const body = new FormData();
+          body.append("kind", kind);
+          body.append("file", img.blob, `${kind}.webp`);
+          const up = await fetch(`/api/businesses/${result.id}/images/`, { method: "POST", body }).catch(
+            () => null,
+          );
+          if (!up?.ok) photosFailed = true;
+        }
+      }
+      router.push(photosFailed ? "/thank-you/?photos=failed" : "/thank-you/");
       router.refresh();
     } catch (err) {
       console.error("Failed to submit business:", err);
@@ -380,6 +423,7 @@ export function RegistrationForm({ categories, towns, loggedInEmail }: Registrat
           <ReviewStep
             steps={steps}
             values={values}
+            images={images}
             categories={categories}
             towns={towns}
             onEdit={goTo}
@@ -396,6 +440,8 @@ export function RegistrationForm({ categories, towns, loggedInEmail }: Registrat
             setValue={setValue}
             errors={errors}
             inputRef={inputRef}
+            images={images}
+            setImages={setImages}
           />
         ) : null}
       </div>
@@ -505,6 +551,8 @@ interface StepRendererProps {
     typeof useForm<BusinessRegistrationInput>
   >["formState"]["errors"];
   inputRef: React.MutableRefObject<HTMLInputElement | HTMLTextAreaElement | null>;
+  images: PickedImages;
+  setImages: React.Dispatch<React.SetStateAction<PickedImages>>;
 }
 
 function StepRenderer({
@@ -518,8 +566,11 @@ function StepRenderer({
   setValue,
   errors,
   inputRef,
+  images,
+  setImages,
 }: StepRendererProps) {
-  const error = errors[step.key]?.message as string | undefined;
+  const error =
+    step.key === "images" ? undefined : (errors[step.key]?.message as string | undefined);
   const inputBase =
     "w-full h-14 px-4 rounded-xl border bg-white text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition";
   const inputClass = `${inputBase} ${error ? "border-destructive" : "border-input"}`;
@@ -534,16 +585,19 @@ function StepRenderer({
         <p className="text-sm text-muted-foreground mb-5">{step.hint}</p>
       )}
 
+      {step.type === "images" && <ImagesPicker images={images} setImages={setImages} />}
+
       {/* Field */}
-      {step.type === "text" ||
+      {(step.type === "text" ||
       step.type === "tel" ||
       step.type === "email" ||
       step.type === "url" ||
-      step.type === "password" ? (
+      step.type === "password") &&
+      step.key !== "images" ? (
         <input
           {...register(step.key)}
           ref={(el) => {
-            register(step.key).ref(el);
+            register(step.key as FieldKey).ref(el);
             inputRef.current = el;
           }}
           // Use type="text" for url fields too — type="url" makes the
@@ -564,11 +618,11 @@ function StepRenderer({
         />
       ) : null}
 
-      {step.type === "textarea" && (
+      {step.type === "textarea" && step.key !== "images" && (
         <textarea
           {...register(step.key)}
           ref={(el) => {
-            register(step.key).ref(el);
+            register(step.key as FieldKey).ref(el);
             inputRef.current = el;
           }}
           rows={6}
@@ -682,15 +736,21 @@ function StepRenderer({
 function ReviewStep({
   steps,
   values,
+  images,
   onEdit,
 }: {
   steps: StepDef[];
   values: BusinessRegistrationInput;
+  images: PickedImages;
   categories: Category[];
   towns: Town[];
   onEdit: (step: number) => void;
 }) {
   const items = steps.map((s, idx) => {
+    if (s.key === "images") {
+      const parts = [images.cover && "תמונה ראשית", images.logo && "לוגו"].filter(Boolean);
+      return { ...s, value: parts.join(" + "), idx };
+    }
     const raw = (values[s.key] as string | undefined)?.toString().trim() || "";
     const v = s.type === "password" && raw ? "•".repeat(raw.length) : raw;
     return { ...s, value: v, idx };
@@ -702,8 +762,8 @@ function ReviewStep({
         כמעט סיימנו! בדקו את הפרטים
       </h2>
       <p className="text-sm text-muted-foreground mb-5">
-        לחצו על אייקון העיפרון ליד כל שדה כדי לערוך, או על "חזור" כדי לעבור
-        אחורה. כשתסיימו - לחצו על <strong>"שלחו את הבקשה"</strong> למטה.
+        לחצו על אייקון העיפרון ליד כל שדה כדי לערוך, או על „חזור” כדי לעבור
+        אחורה. כשתסיימו - לחצו על <strong>„שלחו את הבקשה”</strong> למטה.
         <br />
         <span className="text-xs">עד שתלחצו על הכפתור — הטופס לא נשלח.</span>
       </p>
@@ -721,6 +781,16 @@ function ReviewStep({
                   <span className="text-destructive mr-1">*</span>
                 )}
               </div>
+              {item.key === "images" && (images.cover || images.logo) && (
+                <div className="mt-1.5 flex gap-2">
+                  {images.cover && (
+                    <img src={images.cover.preview} alt="" className="h-14 w-[88px] rounded-lg object-cover" />
+                  )}
+                  {images.logo && (
+                    <img src={images.logo.preview} alt="" className="h-14 w-14 rounded-lg border bg-white object-contain p-1" />
+                  )}
+                </div>
+              )}
               <div
                 className={`mt-0.5 break-words ${
                   item.value
@@ -742,6 +812,136 @@ function ReviewStep({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+// =====================================================================
+// Photo step
+// =====================================================================
+
+const PICK_SLOTS = [
+  { kind: "cover", title: "תמונה ראשית", hint: "המקום, המוצרים או אתם בעבודה", maxW: 1600, maxH: 1200 },
+  { kind: "logo", title: "לוגו", hint: "מומלץ ריבועי, על רקע לבן או שקוף", maxW: 512, maxH: 512 },
+] as const;
+
+/**
+ * Picks the main photo and logo. Images are shrunk to WebP right away (for
+ * the preview and a fast upload) and uploaded only after the business is
+ * created on submit.
+ */
+function ImagesPicker({
+  images,
+  setImages,
+}: {
+  images: PickedImages;
+  setImages: React.Dispatch<React.SetStateAction<PickedImages>>;
+}) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      {PICK_SLOTS.map((slot) => (
+        <PickSlot
+          key={slot.kind}
+          slot={slot}
+          picked={images[slot.kind]}
+          onChange={(img) =>
+            setImages((prev) => {
+              const old = prev[slot.kind];
+              if (old) URL.revokeObjectURL(old.preview);
+              return { ...prev, [slot.kind]: img };
+            })
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
+function PickSlot({
+  slot,
+  picked,
+  onChange,
+}: {
+  slot: (typeof PICK_SLOTS)[number];
+  picked?: PickedImage;
+  onChange: (img: PickedImage | undefined) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const isCover = slot.kind === "cover";
+
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("אפשר להעלות רק קובצי תמונה");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const blob = await shrinkImage(file, slot.maxW, slot.maxH);
+      onChange({ blob, preview: URL.createObjectURL(blob) });
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : "לא הצלחנו לקרוא את התמונה");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl border border-[#eae3d5] bg-white p-4">
+      <div>
+        <h3 className="font-extrabold">{slot.title}</h3>
+        <p className="text-sm text-muted-foreground">{slot.hint}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={busy}
+        aria-label={picked ? `החלפת ${slot.title}` : `בחירת ${slot.title}`}
+        className={`relative overflow-hidden rounded-xl border-2 border-dashed border-input bg-[#faf8f3] transition hover:border-primary ${
+          isCover ? "aspect-[16/10]" : "aspect-square max-w-[200px] w-full mx-auto"
+        }`}
+      >
+        {picked ? (
+          <img
+            src={picked.preview}
+            alt=""
+            className={`absolute inset-0 h-full w-full ${isCover ? "object-cover" : "object-contain p-3"}`}
+          />
+        ) : (
+          <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+            <ImagePlus className="h-8 w-8" />
+            <span className="text-sm font-semibold">לחצו לבחירת תמונה</span>
+          </span>
+        )}
+        {busy && (
+          <span className="absolute inset-0 flex items-center justify-center bg-white/70">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </span>
+        )}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        onChange={onPick}
+        className="hidden"
+      />
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      {picked && (
+        <button
+          type="button"
+          onClick={() => onChange(undefined)}
+          className="inline-flex items-center justify-center gap-1.5 min-h-10 rounded-xl border border-input px-3 text-sm font-semibold text-muted-foreground hover:text-destructive hover:border-destructive transition"
+        >
+          <Trash2 className="h-4 w-4" />
+          הסרה
+        </button>
+      )}
     </div>
   );
 }

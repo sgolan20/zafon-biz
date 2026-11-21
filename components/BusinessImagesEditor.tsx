@@ -40,7 +40,7 @@ const SLOTS: Slot[] = [
 ];
 
 /** Resizes an image file in the browser and re-encodes it as WebP. */
-async function shrinkImage(file: File, maxW: number, maxH: number): Promise<Blob> {
+export async function shrinkImage(file: File, maxW: number, maxH: number): Promise<Blob> {
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file);

@@ -8,7 +8,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function ThankYouPage() {
+export default async function ThankYouPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ photos?: string }>;
+}) {
+  const { photos } = await searchParams;
   return (
     <div className="container-page py-16 sm:py-24 max-w-2xl text-center">
       <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-success/10 text-success mb-6">
@@ -25,9 +30,15 @@ export default function ThankYouPage() {
         באתר.
       </p>
 
+      {photos === "failed" && (
+        <p className="mb-4 rounded-xl border border-[#f0d9a8] bg-[#fdf6e7] p-4 text-sm text-[#7a5310]">
+          פרטי העסק נשמרו, אבל לא הצלחנו להעלות את התמונות. אפשר להעלות אותן שוב מהאזור האישי.
+        </p>
+      )}
+
       <p className="text-base text-muted-foreground mb-8">
-        אם נצטרך פרטים נוספים, ניצור איתכם קשר במספר שהשארתם. בינתיים כדאי להוסיף תמונה ראשית
-        ולוגו, כדי שהעסק יבלוט באינדקס. עושים את זה ב
+        אם נצטרך פרטים נוספים, ניצור איתכם קשר במספר שהשארתם. אפשר לעדכן את הפרטים, התמונה הראשית
+        והלוגו בכל זמן ב
         <Link href="/account/" className="text-primary font-medium underline">
           אזור האישי
         </Link>
